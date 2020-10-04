@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Sharelter&#39;s Site</title>
+    <link>https://sharelter.github.io/post/</link>
+    <description>Recent content in Posts on Sharelter&#39;s Site</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Sun, 04 Oct 2020 09:05:09 +0800</lastBuildDate><atom:link href="https://sharelter.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>My First Blog</title>
+      <link>https://sharelter.github.io/post/my-first-blog/</link>
+      <pubDate>Sun, 04 Oct 2020 09:05:09 +0800</pubDate>
+      
+      <guid>https://sharelter.github.io/post/my-first-blog/</guid>
+      <description>有什么真正重要的事情是我可以现在就参与去做的呢？ 如果有，那要待到何时我才能有机会着手去完成它呢？ Build A Pi-Book!</description>
+    </item>
+    
+  </channel>
+</rss>
