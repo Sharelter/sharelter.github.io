@@ -2,7 +2,7 @@
 title: 第一次写blog。。。
 description: 咕咕咕终于结束了呢
 slug: thought-about-blog
-date: 2022-12-16 :14:00+0000
+date: 2022-12-16T07:17:13Z
 image: cover.jpg
 categories:
     - Life
