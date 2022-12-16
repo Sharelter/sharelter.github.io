@@ -1,10 +1,10 @@
 ---
 title: Life
-description: 
+description: 所见 所感 所想
 image:
 
 # Badge style
 style:
-    background: "#2a9d8f"
+    background: "#ffc0cb"
     color: "#fff"
 ---
