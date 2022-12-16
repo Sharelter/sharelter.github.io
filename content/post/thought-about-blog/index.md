@@ -2,8 +2,8 @@
 title: 第一次写blog。。。
 description: 咕咕咕终于结束了呢
 slug: thought-about-blog
-date: 2022-12-16 00:00:00+0000
-image: cover.png
+date: 2022-12-17 00:00:00+0000
+image: cover.jpg
 categories:
     - Life
 ---
@@ -15,7 +15,7 @@ categories:
 终于在昨天迈出了自己的第一步呢
 在hugo的一堆主题里面选了很久， 选中了[这个](https://stack.jimmycai.com/)看起来比较modern的主题。
 它提供了模版，可以直接使用这个模版创建自己的库， 而且它的自动部署还可以每天自动更新主题
-主题的开发者为我提前做了非常多的事情呢。。。
+主题的开发者帮我我做了非常多的事情。。。
 
 [文档](https://stack.jimmycai.com/guide/getting-started) 写的比较全
 按着README第一次用了codespaces, 虽然重建了几次才成功开起来一个能用的codespace
@@ -27,4 +27,8 @@ categories:
 在写的时候有些地方我会反复斟酌好久。。
 感觉这样子浪费掉了一些时间，
 而且会打断连续冒出来的文字。。
-会不会先把🧠里面冒出来的文字全部倒在屏幕上面再去修是更好的选择呢？
+会不会先把🧠里面冒出来的文字全部倒在屏幕上面再调整是更好的选择呢？
+
+也许。。是强迫症使然？
+
+但是全身贯注的感觉真的好棒啊~
