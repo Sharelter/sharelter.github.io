@@ -17,8 +17,8 @@ subtitle = "我的时间不多了。。。要快点"
 
 [sidebar.avatar]
 enabled = true
-local = false
-src = "https://avatars.githubusercontent.com/u/120631878"
+local = true
+src = "img/avatar.png"
 
 [article]
 math = false
