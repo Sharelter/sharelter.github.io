@@ -1,5 +1,6 @@
 ---
-title: Links
+title: Friend Links
+description: 是好朋友们喵～
 links:
   - title: sbchild
     description: 好耶，是涩妹妹！
