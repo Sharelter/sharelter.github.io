@@ -139,7 +139,7 @@ emitMetadata = 0
 [comments.gitalk]
 owner = "ShioriMina"
 admin = "ShioriMina"
-repo = "gitalk-blog"
+repo = "shiorimina.github.io"
 clientID = "69305f1b7ba17defdd71"
 clientSecret = "3ed3d9cf4520bea02f422afaba077c1f3741d4ed"
 
