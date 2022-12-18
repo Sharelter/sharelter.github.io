@@ -74,8 +74,8 @@ enabled = true
 
 ## Comments
 [comments]
-enabled = false
-provider = "disqus"
+enabled = true
+provider = "gitalk"
 
 [comments.disqusjs]
 shortname = ""
@@ -137,11 +137,11 @@ reactionsEnabled = 1
 emitMetadata = 0
 
 [comments.gitalk]
-owner = ""
-admin = ""
-repo = ""
-clientID = ""
-clientSecret = ""
+owner = "ShioriMina"
+admin = "ShioriMina"
+repo = "ShioriMina/gitalk-blog"
+clientID = "69305f1b7ba17defdd71"
+clientSecret = "3ed3d9cf4520bea02f422afaba077c1f3741d4ed"
 
 [comments.cusdis]
 host = ""
