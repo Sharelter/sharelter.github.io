@@ -1,8 +1,8 @@
 # Change baseurl before deploy
-baseurl = "https://shiorimina.github.io"
+baseurl = "https://sharelter.github.io"
 languageCode = "zh-cn"
 paginate = 5
-title = "ShioriMina"
+title = "Sharelter"
 
 # Theme i18n support
 # Available values: en, fr, id, ja, ko, pt-br, zh-cn, zh-tw, es, de, nl, it, th, el, uk, ar
@@ -13,4 +13,4 @@ DefaultContentLanguage = "zh-cn"
 hasCJKLanguage = true
 
 # Change it to your Disqus shortname before using
-disqusShortname = "shiorimina"
+disqusShortname = "sharelter"
