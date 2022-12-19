@@ -6,7 +6,7 @@ date: 2022-12-16T09:17:13Z
 image: macos9.jpg
 math: false
 toc: true
-comments: false
+comments: true
 draft: false
 categories:
     - Life
