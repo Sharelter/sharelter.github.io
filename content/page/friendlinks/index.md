@@ -17,4 +17,5 @@ menu:
             icon: link
 
 comments: true
+readingTime: false
 ---

@@ -5,6 +5,7 @@ description: 667Mhz的性能猛兽！
 date: 2022-12-16T09:17:13Z
 image: macos9.jpg
 math: false
+toc: true
 comments: false
 draft: false
 categories:
