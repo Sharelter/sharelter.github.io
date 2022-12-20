@@ -12,6 +12,7 @@ categories:
     - Life
 tags: 
     - Retro
+	- toss
 ---
 
 一直想拥有一台ppc构架的计算机，但是一直没有真的买下来过\
