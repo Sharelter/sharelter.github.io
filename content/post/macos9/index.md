@@ -7,6 +7,11 @@ math: false
 license: 
 hidden: false
 comments: true
+categories:
+    - Tech
+tags: 
+    - Retro
+    - toss
 ---
 
 因为我手边只有一台在laptop上面拆下来的DVD Writer, 而且这货所使用的接口并不是标准的SATA接口，
