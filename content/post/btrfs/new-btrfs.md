@@ -1,6 +1,7 @@
 ---
 title: "让ArchLinux运行在Btrfs上！"
-slug: Install archlinux with Btrfs
+slug: archlinux-btrfs
+description: Install Archlinux with Btrfs
 date: 2023-03-12T09:21:48Z
 image: btrfs-logo.webp
 math: false
@@ -38,7 +39,7 @@ draft: false
 那么事不宜迟， 开工！
 
 > 在求教c10s之后，她扔出了如下表情
-![recommend-btrfs](btrfs-recommend.webp)
+![recommend-btrfs](./btrfs-recommend.webp)
 
 嗯。。被强烈安利了btrfs
 
