@@ -23,7 +23,8 @@ draft: false
 很轻松就可以吃光这点空间
 
 之前的分区方式大概如下表
-```
+
+```txt
 /dev/nvme0n1---
              |
              --- partation1 - /root(ext4, 20G)
@@ -72,7 +73,7 @@ btrfs也可以以霸占整个磁盘的方式进行使用， 此时这个磁盘�
 
 继续操作， 需要使用用户空间的btrfs工具`btrfs-progs`
 在ArchLinux上面要安装它，只需
-```sudo pacman -S btrfs-progs```
+`sudo pacman -S btrfs-progs`
 
 ## btrfs子卷
 
@@ -82,7 +83,8 @@ btrfs也可以以霸占整个磁盘的方式进行使用， 此时这个磁盘�
 就可以用 `btrfs subvolume create /path/to/subvolume`来创建子卷
 
 这里， 我为`/root, /home, /swap`这三个目录在顶级子卷下面创建了三个子卷
-```
+
+```bash
 btrfs subvoleme create /btrfs/subvol_root
 btrfs subvolume create /btrfs/subvol_home
 
@@ -98,16 +100,15 @@ btrfs-progs 6.1版本之后，提供了一个直接创建swap文件的命令:
 
 通过`btrfs subvolume list -p /mnt` 可以列出文件系统下面的子卷
 
-```
+```txt
 ID 256 gen 10069 parent 5 top level 5 path subvol_root
 ID 257 gen 10069 parent 5 top level 5 path subvol_home
 ID 258 gen 9195 parent 5 top level 5 path @swap
 ID 259 gen 17 parent 256 top level 256 path subvol_root/var/lib/portables
 ID 260 gen 18 parent 256 top level 256 path subvol_root/var/lib/machines
 ```
+
 上面是我的子卷列表
-
-
 
 ## 挂载
 
@@ -121,20 +122,20 @@ ID 260 gen 18 parent 256 top level 256 path subvol_root/var/lib/machines
 
 我的`/etc/fstab`如下:
 
-```
+```txt
 # /dev/nvme0n1p2 LABEL=Arch
-UUID=efeb8313-4210-4499-a805-d0f97e57c549	/         	btrfs     	rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=256,subvol=/subvol_root	0 0
+UUID=efeb8313-4210-4499-a805-d0f97e57c549 /          btrfs      rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=256,subvol=/subvol_root 0 0
 
 # /dev/nvme0n1p1
-UUID=45BB-F7D1      	/boot     	vfat      	rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro	0 2
+UUID=45BB-F7D1       /boot      vfat       rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro 0 2
 
 # /dev/nvme0n1p2 LABEL=Arch
-UUID=efeb8313-4210-4499-a805-d0f97e57c549	/home     	btrfs     	rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=257,subvol=/subvol_home	0 0
+UUID=efeb8313-4210-4499-a805-d0f97e57c549 /home      btrfs      rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=257,subvol=/subvol_home 0 0
 
 # /dev/nvme0n1p2 LABEL=Arch
-UUID=efeb8313-4210-4499-a805-d0f97e57c549	/swap     	btrfs     	rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=258,subvol=/@swap	0 0
+UUID=efeb8313-4210-4499-a805-d0f97e57c549 /swap      btrfs      rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=258,subvol=/@swap 0 0
 
-/swap/swapfile      	none      	swap      	defaults  	0 0
+/swap/swapfile       none       swap       defaults   0 0
 ```
 
 ## 检查文件系统错误
@@ -144,13 +145,13 @@ UUID=efeb8313-4210-4499-a805-d0f97e57c549	/swap     	btrfs     	rw,relatime,comp
 btrfs提供了`scrub`来进行在线的文件系统检查
 
 BtrfsWiki这样写道：
-> Btrfs scrub is "[a]n online filesystem checking tool. Reads all the data and metadata on the filesystem and uses checksums and the duplicate copies from RAID storage to identify and repair any corrupt data." 
+> Btrfs scrub is "[a]n online filesystem checking tool. Reads all the data and metadata on the filesystem and uses checksums and the duplicate copies from RAID storage to identify and repair any corrupt data."
 
 挂上文件系统的根目录进行一次扫描操作: `sudo btrfs scrub start /`
 
 查看进度: `sudo btrfs scrub status /`
 
-```
+```txt
 UUID:             efeb8313-4210-4499-a805-d0f97e57c549
 Scrub started:    Sun Mar 12 19:53:53 2023
 Status:           running
@@ -162,6 +163,7 @@ Bytes scrubbed:   24.29GiB  (26.06%)
 Rate:             4.86GiB/s
 Error summary:    no errors found
 ```
+
 扫描只用了14秒， 非常快！
 
 ## End
