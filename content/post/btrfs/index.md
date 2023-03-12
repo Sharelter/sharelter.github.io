@@ -5,8 +5,6 @@ description: Install Archlinux with Btrfs
 date: 2023-03-12T09:21:48Z
 image: btrfs-logo.jpg
 math: false
-license: CC-BY-NA-SA
-hidden: false
 comments: true
 categories: 
     - Tech
@@ -40,7 +38,7 @@ draft: false
 那么事不宜迟， 开工！
 
 > 在求教c10s之后，她扔出了如下表情
-![recommend-btrfs](./btrfs-recommend.jpg)
+![recommend-btrfs](btrfs-recommend.jpg)
 
 嗯。。被强烈安利了btrfs
 
