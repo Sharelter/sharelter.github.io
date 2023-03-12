@@ -14,17 +14,12 @@ draft: false
 
 ## 缘起
 
-最近主力laptop上面的Arch要爆根目录了
-`/`仅剩的900+MB 已经不能完成Arch的每日一滚了
+最近主力laptop上面的Arch根目录余量一直在1.5GiB上下徘徊，
+今天滚完之后`/`仅剩的900+MB 已经不能完成Arch的每日一滚了
 
 因为我在安装这个Arch的时候使用了固定的分区方式，
-而且根目录只分配了20GB, 使用桌面作业系统的话
+而且根目录只分配了20GB, 安装使用桌面作业系统的话，
 很轻松就可以吃光这点空间
-
-我在使用的磁盘里面没有留下空余的未分配空间，
-比较好的方法只有重装整个OS
-
-那么方法确定了， 那就开搞吧
 
 之前的分区方式大概如下表
 ```
@@ -35,17 +30,28 @@ draft: false
              --- partation2 - /home(f2fs, 460G)
 ```
 
-在求教c10s之后，她扔出了如下表情
+不幸的是我在使用的磁盘里面没有留下空余的未分配空间给根目录分区扩充，
+比较好的方法是重装整个OS
+
+如果不干预的话， 我的开发环境会在不远的将来boom掉
+
+那么事不宜迟， 开工！
+
+> 在求教c10s之后，她扔出了如下表情
 ![recommend-btrfs](btrfs-recommend.webp)
 
 嗯。。被强烈安利了btrfs
 
 之前也有听过btrfs这个东东，但是~~因为懒~~还没有用过
 
-上Archwiki, 找到btrfs的[wikipage](https://wiki.archlinux.org/title/Btrfs)
+在Archwiki找到btrfs的[wikipage](https://wiki.archlinux.org/title/Btrfs)
 发现自带很多高级的功能 例如逻辑卷管理、快照、RAID ...etc.
 
+> Btrfs is a modern copy on write (CoW) filesystem for Linux aimed at implementing advanced features while also focusing on fault tolerance, repair and easy administration. Jointly developed at multiple companies, Btrfs is licensed under the GPL and open for contribution from anyone.
+
 看起来很好耶，上车！
+
+> Tips: btrfs的开发十分活跃， 建议使用最新的内核，尽量避免使用祖传的老版本内核以得到最佳的体验
 
 ## 创建文件系统
 
@@ -54,14 +60,14 @@ draft: false
 
 btrfs也可以以霸占整个磁盘的方式进行使用， 此时这个磁盘的分区表就由btrfs接管了
 
-当然，因为我还需要ESP partation来启动， 就不可以使用这种方式
+因为我还需要ESP partation来使用UEFI启动， 就不可以使用这种方式
 
 这里我的磁盘是分好了区的， 一个2GB的FAT32分区来实现UEFI启动 剩下的所有空间给btrfs
 
 操作到这一步， 已经可以继续下一步往这些文件系统上面安装系统了
 
 但是， 这样使用btrfs不能用上它的许多高级功能
-此时如果直接挂载这个分区的话， 可以享受到btrfs的CoW(写时复制) 特性来减少闪存设备的损耗，还可以启用压缩
+此时如果直接挂载这个分区的话， 可以享受到btrfs的CoW(写时复制) 特性来减少闪存设备的损耗，可以启用压缩、、类似的优势
 
 继续操作， 需要使用用户空间的btrfs工具`btrfs-progs`
 在ArchLinux上面要安装它，只需
@@ -130,3 +136,33 @@ UUID=efeb8313-4210-4499-a805-d0f97e57c549	/swap     	btrfs     	rw,relatime,comp
 /swap/swapfile      	none      	swap      	defaults  	0 0
 ```
 
+## 检查文件系统错误
+
+没有效验的文件系统，文件损坏是无声发生的
+
+btrfs提供了`scrub`来进行在线的文件系统检查
+
+BtrfsWiki这样写道：
+> Btrfs scrub is "[a]n online filesystem checking tool. Reads all the data and metadata on the filesystem and uses checksums and the duplicate copies from RAID storage to identify and repair any corrupt data." 
+
+挂上文件系统的根目录进行一次扫描操作: `sudo btrfs scrub start /`
+
+查看进度: `sudo btrfs scrub status /`
+
+```
+UUID:             efeb8313-4210-4499-a805-d0f97e57c549
+Scrub started:    Sun Mar 12 19:53:53 2023
+Status:           running
+Duration:         0:00:05
+Time left:        0:00:14
+ETA:              Sun Mar 12 19:54:16 2023
+Total to scrub:   93.21GiB
+Bytes scrubbed:   24.29GiB  (26.06%)
+Rate:             4.86GiB/s
+Error summary:    no errors found
+```
+扫描只用了14秒， 非常快！
+
+## End
+
+我也是刚刚上手btrfs, 如果有小可爱有更好的建议或者发现哪里出错了，欢迎评论 or 提出PR~
