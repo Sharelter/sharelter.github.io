@@ -114,7 +114,8 @@ ID 260 gen 18 parent 256 top level 256 path subvol_root/var/lib/machines
 
 推荐创建一个子卷来挂载根目录，这样会为以后更改子卷布局和快照带来非常大的便利
 
-我添加了`autodefrap`自动除碎片， `compress=zstd`启用zstd压缩方式，`discard=async`启用SSD-TRIM 三个参数
+我添加了 `compress=zstd`启用zstd压缩方式，`discard=async`启用SSD-TRIM 参数
+Update: 去掉了`autodefrag`,在SSD上面使用这个选项弊大于利
 
 因为是在安装过程中操作， 挂载的选项都会被`genfstab`自动插到`/etc/fstab`当中
 
