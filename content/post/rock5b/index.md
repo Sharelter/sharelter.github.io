@@ -14,7 +14,7 @@ tags:
 
 本文记录了 ROCK5B (RK3588) 的开箱记录，以及遇到的问题及解决方法
 
-### 烧录系统到SD卡并启动
+## 烧录系统到SD卡并启动
 
 按照 <https://wiki.radxa.com/Rock5/5b/getting_started> 下载并烧录系统，这里先测试下 ubuntu(server 版本）（不建议一开始使用这个系统，bug多，先用debian或者 armbian（推荐） 或者 安卓， 安卓是最好上手的）。
 
@@ -151,7 +151,7 @@ sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 9B98116C9AA302C7
     wget -O - apt.radxa.com/focal-stable/public.key | sudo apt-key add -
 ```
 
-### 电源
+## 电源
 
 PMU 是通过 I2C 连接到芯片的，可以在系统看到当前协商的电压：
 
@@ -172,7 +172,7 @@ PMU 是通过 I2C 连接到芯片的，可以在系统看到当前协商的电�
     11.98
 ```
 
-### CPU
+## CPU
 
 ```
     cat /proc/cpuinfo
@@ -295,7 +295,7 @@ Link: [cpufreq-rockchip.txt](cpufreq-rockchip.txt)
 
 可以看到，实际只有2.2GHz，和2.4GHz足足差了200MHz, 6.5%，确实很糟糕了。。。
 
-### 内存
+## 内存
 
 查看频率：
 ```
@@ -315,7 +315,7 @@ Link: [cpufreq-rockchip.txt](cpufreq-rockchip.txt)
     echo 1560000000 > /sys/class/devfreq/dmc/userspace/set_freq
 ```
 
-### HDMI输出
+## HDMI输出
 
 到此为止，HDMI 仍然没有输出，我的显示器是 2k(2560x1440)
 
@@ -329,7 +329,7 @@ Link: [cpufreq-rockchip.txt](cpufreq-rockchip.txt)
 
 另外，在使用 debian 系统后，可以直接输出 1080p和4k输出，但均没有 2k 输出可以直接使用， 不过有个最简单的方法就是设置为 4k60fps，然后设置缩放200%即可，因为性能足够， 4k 也不卡。
 
-### Armbian
+## Armbian
 Armbian 适配得更好一点，推荐使用
 因为 GPU 驱动大多需要在 wayland 模式下使用，可以设置默认登录到 wayland 窗口管理模式，这样就不用每次登录时选择一次了
 
@@ -342,7 +342,7 @@ Armbian 适配得更好一点，推荐使用
 另外，官网提供的链接不是最新的，可以到github.com/armbian/build/releases 找最新的。
 另外， github.com/amazingfate/armbian-rock5b-images 据说是内置了 GPU 相关的驱动，在官方还没完全支持 GPU 前可以尝试这个，具体看后面 GPU 使用部分。
 
-### 从NVME启动
+## 从NVME启动
 
 SD 卡会比较慢，据说太慢还会影响到快充握手，因为快充握手协议是在系统驱动里面的，所以最好用 eMMc 或者 nvme ssd 或者 USB 启动读写更快。
 
@@ -433,7 +433,7 @@ iozone, fio
     sudo nvme smart-log /dev/nvme0 |grep -i "^Temperature"
 ```
 
-### GPU 硬件解码
+## GPU 硬件解码
 
 装好 armbian 发现自带的 mpv 播放器只能软解，跑个 4k 直接把 CPU 吃得差不多一卡一卡。
 
