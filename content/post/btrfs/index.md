@@ -7,7 +7,7 @@ image: btrfs-logo.jpg
 math: false
 comments: true
 categories: 
-    - Tech
+    - Linux
 draft: false
 ---
 

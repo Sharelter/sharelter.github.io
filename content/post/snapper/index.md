@@ -6,7 +6,7 @@ date: 2023-04-05T16:23:08+08:00
 hidden: false
 comments: true
 categories: 
-    - Tech
+    - Linux
 tags: 
     - toss
 ---

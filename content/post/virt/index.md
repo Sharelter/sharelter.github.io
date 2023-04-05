@@ -7,7 +7,7 @@ image:
 math: false
 comments: true
 categories: 
-    - Tech
+    - Linux
 tags: 
     - toss
 ---
