@@ -1,0 +1,1463 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Posts on Sharelter</title><link>https://sharelter.github.io/post/</link><description>Recent content in Posts on Sharelter</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Wed, 05 Apr 2023 16:23:08 +0800</lastBuildDate><atom:link href="https://sharelter.github.io/post/index.xml" rel="self" type="application/rss+xml"/><item><title>用Snapper自动管理btrfs快照</title><link>https://sharelter.github.io/p/snapper/</link><pubDate>Wed, 05 Apr 2023 16:23:08 +0800</pubDate><guid>https://sharelter.github.io/p/snapper/</guid><description>&lt;p>前天因为在疲惫的情况下操作很多东西， 一不小心把要dd进USB的ArchLinux LiveCD给dd到了系统盘里面。。。
+命令执行的时候速度达到了1.8GB/s， 我看了一眼dd的of参数，心中一阵凉意&lt;/p>
+&lt;blockquote>
+&lt;p>我的记忆就这样被清除了吗。。。。&lt;/p>&lt;/blockquote>
+&lt;p>好在我还有备份， 不至于太糟， 只不过需要耗费时间来reinstall了&lt;/p>
+&lt;p>我尝试把作业系统完全还原到之前的状态，花费时间3hour&lt;/p>
+&lt;p>但是装回来之后， 我感到这个UI过于熟悉， 动起了翻新系统的念头&lt;/p>
+&lt;p>因为不久之前我在折腾飞腾的时候配置了Fedora， 配好之后还蛮好看的。。&lt;/p>
+&lt;p>真的心动了。。。&lt;/p>
+&lt;p>于是就真的开始动手了。。&lt;/p>
+&lt;p>把刚装好的Arch又完全抹掉，一手拿着&lt;a class="link" href="https://wiki.archlinux.org/title/Installation_guide" target="_blank" rel="noopener"
+>Installation Guide&lt;/a> 操作Livecd, 从头开始安装了一遍Arch, 花费时间2hour&lt;/p>
+&lt;p>~~ 才不会因为忘记安装的时候忘记安装链接Internet的包而需要重新进入Livecd装包呢 ~~&lt;/p>
+&lt;p>~~ 才不会因为贪心有线网络的一点加速而耗费更多时间来让有线链接正常工作呢 ~~&lt;/p>
+&lt;p>这样操作一次真的耗时好多的。。。 不知道我在玩Rock5B的时候怎么会又耐心来来回回这样操作几十次的。。&lt;/p>
+&lt;p>在另一台设备上面打开&lt;a class="link" href="https://wiki.archlinux.org/title/General_recommendations" target="_blank" rel="noopener"
+>General Recommendations&lt;/a>， 给黑漆漆的TTY注入灵魂&lt;/p>
+&lt;h2 id="btrfs子卷规划">Btrfs子卷规划
+&lt;/h2>&lt;p>要构建一个可以持久使用的作业系统的话， 需要有一个良好布局的文件系统来承载它&lt;/p>
+&lt;p>snapper推荐的文件系统布局如下&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">subvolid&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">├──&lt;/span> &lt;span class="err">@&lt;/span> &lt;span class="o">-|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">|&lt;/span> &lt;span class="n">contained&lt;/span> &lt;span class="n">directories&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">|&lt;/span> &lt;span class="err">├──&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">usr&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">|&lt;/span> &lt;span class="err">├──&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">bin&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">|&lt;/span> &lt;span class="err">├──&lt;/span> &lt;span class="o">/.&lt;/span>&lt;span class="n">snapshots&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">|&lt;/span> &lt;span class="err">├──&lt;/span> &lt;span class="o">...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="o">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">├──&lt;/span> &lt;span class="err">@&lt;/span>&lt;span class="n">home&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">├──&lt;/span> &lt;span class="err">@&lt;/span>&lt;span class="n">snapshots&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">├──&lt;/span> &lt;span class="err">@&lt;/span>&lt;span class="n">var_log&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>@&lt;/code>是根目录的子卷 &lt;code>@home&lt;/code>是家目录的子卷， &lt;code>@var_log&lt;/code>挂载在&lt;code>/var/log&lt;/code>&lt;/p>
+&lt;p>&lt;code>@snapshot&lt;/code>是专用于快照的子卷， 挂载在&lt;code>/.snapshot&lt;/code>&lt;/p>
+&lt;p>上面所有的子卷前面都有一个&lt;code>@&lt;/code>符号表示这些子卷都直属于subvolid=5的顶层子卷&lt;/p>
+&lt;h2 id="snapper">Snapper
+&lt;/h2>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"># pacman -S snapper
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>snapper是一个辅助管理btrfs子卷的工具&lt;/p>
+&lt;p>可以自动化地定期对配置的子卷进行快照， 而且还可以清除过时的子卷&lt;/p>
+&lt;p>如果要把某个子卷交给&lt;code>snapper&lt;/code>进行快照，可以像下面这样写：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"># snapper -c root create-config /
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># snapper -c home create-config /home
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>子卷的路径写子卷的挂载点就好&lt;/p>
+&lt;p>我一开始操作的时候还以为要把子卷的顶层目录挂载上， 使用由顶层子卷索引的目录才可以让&lt;code>snapper&lt;/code>进行快照操作&lt;/p>
+&lt;p>默认情况下， &lt;code>snapper&lt;/code>将会在根目录子卷下面创建一个&lt;code>/.snapshot&lt;/code>的子卷来存放所有快照&lt;/p>
+&lt;p>这个子卷的路径如下图所示&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">subvolid=5
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">|
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">|
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ---- @ # 挂载在/
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> |
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> |
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> .snapshots # 挂载在/.snapshots
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这样存放快照有一个弊端， 如果后续需要回滚的话， 回滚之后会丢失掉所有的快照&lt;/p>
+&lt;p>要解决这个问题的话 可以为创建快照单独创建一个直属于顶层子卷的子卷&lt;code>@snapshot&lt;/code>&lt;/p>
+&lt;p>在一个正在运行的作业系统上面创建一个子卷的话， 可以先把顶层子卷找一个地方挂载上去再创建子卷&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"># mkdir /btrfs
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># btrfs subvolume create /@snapshot
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># mount -o subvol=@snapshot /dev/nvme1n1p2 /.snapshots
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="通过定时器来实现自动化操作">通过定时器来实现自动化操作
+&lt;/h3>&lt;p>snapper可以通过&lt;code>cron&lt;/code>或者&lt;code>systemd timer&lt;/code>来定时触发快照
+但是如果同时启用了&lt;code>cron&lt;/code>和&lt;code>systemd timer&lt;/code>的定时服务， 那么会重复创建两次快照&lt;/p>
+&lt;p>我用了systemd timer来触发， 同时为了避免后面装了cron的实现之后出锅
+把snapper使用cron的定时文件删除掉&lt;/p>
+&lt;p>在&lt;code>/etc/pacman.conf&lt;/code>里面添加一下内容：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">NoExtract = etc/cron.daily/snapper etc/cron.hourly/snapper
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="snap-pac">snap-pac
+&lt;/h2>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"># pacman -S snap-pac
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>snap-pac实现了通过&lt;code>pacman&lt;/code>包管理器的hook函数来进行系统更新前后的自动化快照&lt;/p>
+&lt;p>它的配置文件在&lt;code>/etc/snap-pac.ini&lt;/code>
+是一份注释良好的文件&lt;/p>
+&lt;p>里面所有的内容初始状态下都是被注释的 如果没有任何有效的配置内容， &lt;code>snap-pac&lt;/code>将以默认配置运行&lt;/p>
+&lt;p>默认状况下 这个小工具将会对&lt;code>snapper&lt;/code>的root配置进行snapshot&lt;/p>
+&lt;p>如果你的snapper里面有这个名为root的配置的话 不需要任何其他配置，&lt;code>snap-pac&lt;/code>就可以正常工作了&lt;/p>
+&lt;p>配置文件里面详细写了每个参数的作用和它的默认值， 如果想要设定的值和默认值一样， 这项配置留空就可以&lt;/p>
+&lt;p>下面放一下我的&lt;code>/etc/snap-pac.ini&lt;/code>文件&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"># snap-pac example configuration file
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># see snap-pac(8) for more details
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># Each section corresponds with a snapper configuration. Add additional sections to add
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># other configurations to be snapshotted. By default, only the root configuration is snapshotted.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># Create a section named [DEFAULT] to have a setting apply for all snapper configurations
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Uncomment to set parameters for snapper configuration named root
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[root]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## How many characters to limit the description for snapper.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is 72
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">desc_limit = 72
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Whether or not to take snapshots of this snapper configuration
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is True for root configuration and False for all other configurations
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">snapshot = True
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## What snapper cleanup algorithm to use
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is number
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">cleanup_algorithm = number
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Pre snapshot description.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is the pacman command that triggered the hook
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">#pre_description = pacman pre snapshot
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Post snapshot description.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is the list of packages involved in the pacman transaction
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">#post_description = pacman post snapshot
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Uncomment to add &amp;#34;important=yes&amp;#34; to userdata for snapshots referring to these packages
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is []
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">important_packages = [&amp;#34;linux&amp;#34;]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Uncomment to add &amp;#34;important=yes&amp;#34; to userdata for snapshots that were created with the following commands
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is []
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">important_commands = [&amp;#34;pacman -Syu&amp;#34;]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Add custom userdata. Each key-value pair should be an item in the list
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is []
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">#userdata = [&amp;#34;key=value&amp;#34;,&amp;#34;foo=bar&amp;#34;]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Example for another snapper configuration named &amp;#34;home&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># [home]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">## Default is False
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># snapshot = True
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>配置好之后， 每次使用&lt;code>pacman&lt;/code>进行包的操作， snapper都会对设定的子卷进行快照&lt;/p></description></item><item><title>用Virt-Mnanger来配置qemu hostfwd端口转发</title><link>https://sharelter.github.io/p/qemu-hostfwd-config/</link><pubDate>Thu, 30 Mar 2023 12:20:52 +0800</pubDate><guid>https://sharelter.github.io/p/qemu-hostfwd-config/</guid><description>&lt;p>尝试用qemu/kvm装一台Ubuntu 22.04来跑一点服务， 通过&lt;a class="link" href="https://wiki.archlinux.org/title/Virt-Manager" target="_blank" rel="noopener"
+>这个&lt;/a>配置了virt-manager的qemu-user-session&lt;/p>
+&lt;p>&lt;del>(反复reboot了几次才成功跑起来，都是因为我没有把manual看全就急着up and running)&lt;/del>&lt;/p>
+&lt;p>这个virtualhost是要对外提供服务的嘛，因为qemu的user-network是通过NAT的，这里就需要一点端口转发的魔法&lt;/p>
+&lt;p>开始的思路是用macvtap或者bridged的network
+但是我的nic是一块intel AX211 wirelesscard, 而macvtap和bridge这种bridged的网络模式都不太支援无线网路&lt;/p>
+&lt;p>创建bridge的话还要干掉主机的network-manager&lt;/p>
+&lt;p>那么就另寻出路吧。。&lt;/p>
+&lt;p>询问了一下&lt;code>@ziyao&lt;/code>姐姐， 得到道具&lt;code>hostfwd&lt;/code>&lt;/p>
+&lt;p>去DuckDuckGo Search了一下&lt;code>qemu hostfwd&lt;/code>找到了&lt;a class="link" href="https://unix.stackexchange.com/questions/124681/how-to-ssh-from-host-to-guest-using-qemu" target="_blank" rel="noopener"
+>这个&lt;/a>
+这个post有166k的访问量诶， 可见这个需求是十分常见的&lt;/p>
+&lt;p>但是这个使用qemu的cli来运行的virtualhost, virt-manager是用XML格式的配置文件来管理每个virtualmachine的config的&lt;/p>
+&lt;p>继续Search&lt;code>how to port forward ssh in virt manager&lt;/code>，在StackOverFlow上面找到了&lt;a class="link" href="https://unix.stackexchange.com/questions/350339/how-to-port-forward-ssh-in-virt-manager" target="_blank" rel="noopener"
+>这个&lt;/a> 嗯， 就是我想要的东西&lt;/p>
+&lt;p>&lt;del>又是因为太着急了， 没有看全manual就去操作&lt;/del>，导致浪费了一些时间来找virt-manager的config文件在什么地方&lt;/p>
+&lt;p>翻了几篇post，得知要用&lt;code>virsh edit&lt;/code>来编辑，这时候回来再看这个指南， 发现怎样编辑virtualhost的配置已经在第一行写明了呜呜呜&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">virsh -c qemu:///session edit ubuntu18.04
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这就是stackoverflow那篇post上面给出的编辑virtualhost配置的方法&lt;/p>
+&lt;p>ubuntu18.04是创建的virtualhost的名字&lt;/p>
+&lt;p>接下来先把原有的nic的长得像下面这样子的配置去掉&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;lt;interface type=&amp;#39;user&amp;#39;&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;lt;mac address=&amp;#39;52:54:00:52:35:ff&amp;#39;/&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;lt;model type=&amp;#39;rtl8139&amp;#39;/&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;lt;address type=&amp;#39;pci&amp;#39; domain=&amp;#39;0x0000&amp;#39; bus=&amp;#39;0x00&amp;#39; slot=&amp;#39;0x03&amp;#39; function=&amp;#39;0x0&amp;#39;/&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&amp;lt;/interface&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在xml的根节点里加上qemu的命名空间:&lt;/p>
+&lt;p>配置文件里面原本是这样子的&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;lt;domain type=&amp;#39;kvm&amp;#39;&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>插入之后是酱紫&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;lt;domain type=&amp;#39;kvm&amp;#39; xmlns:qemu=&amp;#39;http://libvirt.org/schemas/domain/qemu/1.0&amp;#39;&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>把这段插入到domain的根节点之间：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">&amp;lt;qemu:commandline&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;lt;qemu:arg value=&amp;#39;-netdev&amp;#39;/&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;lt;qemu:arg value=&amp;#39;user,id=ubuntu-net,net=10.0.10.0/24,dhcpstart=10.0.10.10,hostfwd=tcp::10080-:80,hostfwd=tcp::10443-:443,hostfwd=tcp::22222-:22&amp;#39;/&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;lt;qemu:arg value=&amp;#39;-device&amp;#39;/&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;lt;qemu:arg value=&amp;#39;virtio-net,netdev=ubuntu-net,addr=0x10&amp;#39;/&amp;gt;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&amp;lt;/qemu:commandline&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>-netdev&lt;/code>定义了一个qemu虚拟网络, 然后再通过&lt;code>-device&lt;/code>参数， 定义一个虚拟网卡接入到刚才定义的网络当中去&lt;/p>
+&lt;p>保存退出， 运行一下这个虚拟机&lt;/p>
+&lt;p>发现新添加的nic的pcie address和已有的虚拟vga设备冲突了&lt;/p>
+&lt;p>原来是没有指定在pcie总线上面的地址，因为这个nic是通过命名行参数添加的
+自动分配到第一个pcie地址上面去了&lt;/p>
+&lt;p>而第一个地址又被xml里面定义的其他设备使用了&lt;/p>
+&lt;p>所以用&lt;code>addr=&lt;/code>分配一个没有被使用的地址就可以了！&lt;/p>
+&lt;p>改好之后果然就可以fireup and running了， 但是&lt;code>ip link&lt;/code>发现虚拟网卡是&lt;code>LINK DOWN&lt;/code>的状态&lt;/p>
+&lt;p>再去StackOverFlow搜索一下，&lt;code>sudo dhclient $netdevice&lt;/code>&lt;/p>
+&lt;p>网络就可以用了&lt;/p>
+&lt;p>想用&lt;code>network-manager&lt;/code>来配置， 但是发现ubuntu server默认不是用的NM,而是netplan&lt;/p>
+&lt;p>编辑&lt;code>/etc/netplan/00-installer-config.yaml&lt;/code>:&lt;/p>
+&lt;p>把网络设备名字改成当前的问题就解决了&lt;/p></description></item><item><title>Rock5b试玩</title><link>https://sharelter.github.io/p/rock5b/</link><pubDate>Tue, 14 Mar 2023 15:45:24 +0800</pubDate><guid>https://sharelter.github.io/p/rock5b/</guid><description>&lt;img src="https://sharelter.github.io/p/rock5b/rock5b.jpg" alt="Featured image of post Rock5b试玩" />&lt;p>本文记录了 ROCK5B (RK3588) 的开箱记录，以及遇到的问题及解决方法&lt;/p>
+&lt;h2 id="烧录系统到sd卡并启动">烧录系统到SD卡并启动
+&lt;/h2>&lt;p>按照 &lt;a class="link" href="https://wiki.radxa.com/Rock5/5b/getting_started" target="_blank" rel="noopener"
+>https://wiki.radxa.com/Rock5/5b/getting_started&lt;/a> 下载并烧录系统，这里先测试下 ubuntu(server 版本）（不建议一开始使用这个系统，bug多，先用debian或者 armbian（推荐） 或者 安卓， 安卓是最好上手的）。&lt;/p>
+&lt;p>这里系统盘制作好了会发现磁盘最后面有一段空闲分区，不用手动去扩展，ubuntu 系统第一次启动会自动扩容根目录到卡的最大空间。&lt;/p>
+&lt;p>可以使用串口模块查看日志，串口连接（波特率是 1500000 ，可能有些串口模块不支持这么高的波特率）&lt;/p>
+&lt;p>&lt;img src="https://sharelter.github.io/p/rock5b/seriel_1.jpg"
+width="420"
+height="250"
+srcset="https://sharelter.github.io/p/rock5b/seriel_1_hu_68b7d25041c4d936.jpg 480w, https://sharelter.github.io/p/rock5b/seriel_1_hu_5aee172ed3112b7b.jpg 1024w"
+loading="lazy"
+alt="seriel_1.jpg"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="403px"
+>&lt;/p>
+&lt;p>但是日志是不完全的，因为默认系统都关闭了日志打印，也不能看到什么消息&lt;/p>
+&lt;p>Ubuntu 第一次开机 会一直循环&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl"> &lt;span class="p">[&lt;/span> &lt;span class="mf">9.952843&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">BUG&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">spinlock&lt;/span> &lt;span class="n">bad&lt;/span> &lt;span class="n">magic&lt;/span> &lt;span class="n">on&lt;/span> &lt;span class="n">CPU&lt;/span>&lt;span class="c1">#1, systemd-udevd/433&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">[&lt;/span> &lt;span class="mf">9.957383&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">lock&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mh">0xffffffc012b26080&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">.&lt;/span>&lt;span class="n">magic&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">00000000&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">.&lt;/span>&lt;span class="n">owner&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">none&lt;/span>&lt;span class="o">&amp;gt;/-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">.&lt;/span>&lt;span class="n">owner_cpu&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">[&lt;/span> &lt;span class="mf">12.590411&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">reboot&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">Restarting&lt;/span> &lt;span class="n">system&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">DDR&lt;/span> &lt;span class="n">Version&lt;/span> &lt;span class="n">V1&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">08&lt;/span> &lt;span class="mi">20220617&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">LPDDR4X&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2112&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">channel&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">BW&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">16&lt;/span> &lt;span class="n">Col&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">10&lt;/span> &lt;span class="n">Bk&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">8&lt;/span> &lt;span class="n">CS0&lt;/span> &lt;span class="n">Row&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">17&lt;/span> &lt;span class="n">CS1&lt;/span> &lt;span class="n">Row&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">17&lt;/span> &lt;span class="n">CS&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">2&lt;/span> &lt;span class="n">Die&lt;/span> &lt;span class="n">BW&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">8&lt;/span> &lt;span class="n">Size&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">4096&lt;/span>&lt;span class="n">MB&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">channel&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">BW&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">16&lt;/span> &lt;span class="n">Col&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">10&lt;/span> &lt;span class="n">Bk&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">8&lt;/span> &lt;span class="n">CS0&lt;/span> &lt;span class="n">Row&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">17&lt;/span> &lt;span class="n">CS1&lt;/span> &lt;span class="n">Row&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">17&lt;/span> &lt;span class="n">CS&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">2&lt;/span> &lt;span class="n">Die&lt;/span> &lt;span class="n">BW&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">8&lt;/span> &lt;span class="n">Size&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">4096&lt;/span>&lt;span class="n">MB&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">channel&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">BW&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">16&lt;/span> &lt;span class="n">Col&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">10&lt;/span> &lt;span class="n">Bk&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">8&lt;/span> &lt;span class="n">CS0&lt;/span> &lt;span class="n">Row&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">17&lt;/span> &lt;span class="n">CS1&lt;/span> &lt;span class="n">Row&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">17&lt;/span> &lt;span class="n">CS&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">2&lt;/span> &lt;span class="n">Die&lt;/span> &lt;span class="n">BW&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">8&lt;/span> &lt;span class="n">Size&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">4096&lt;/span>&lt;span class="n">MB&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">channel&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">BW&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">16&lt;/span> &lt;span class="n">Col&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">10&lt;/span> &lt;span class="n">Bk&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">8&lt;/span> &lt;span class="n">CS0&lt;/span> &lt;span class="n">Row&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">17&lt;/span> &lt;span class="n">CS1&lt;/span> &lt;span class="n">Row&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">17&lt;/span> &lt;span class="n">CS&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">2&lt;/span> &lt;span class="n">Die&lt;/span> &lt;span class="n">BW&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">8&lt;/span> &lt;span class="n">Size&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mi">4096&lt;/span>&lt;span class="n">MB&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Manufacturer&lt;/span> &lt;span class="n">ID&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mh">0x6&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CH0&lt;/span> &lt;span class="n">RX&lt;/span> &lt;span class="n">Vref&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mf">28.7&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">TX&lt;/span> &lt;span class="n">Vref&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mf">24.8&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mf">25.8&lt;/span>&lt;span class="o">%&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CH1&lt;/span> &lt;span class="n">RX&lt;/span> &lt;span class="n">Vref&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mf">28.7&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">TX&lt;/span> &lt;span class="n">Vref&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mf">24.8&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mf">23.8&lt;/span>&lt;span class="o">%&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CH2&lt;/span> &lt;span class="n">RX&lt;/span> &lt;span class="n">Vref&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mf">27.7&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">TX&lt;/span> &lt;span class="n">Vref&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mf">24.8&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mf">23.8&lt;/span>&lt;span class="o">%&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CH3&lt;/span> &lt;span class="n">RX&lt;/span> &lt;span class="n">Vref&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mf">29.7&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">TX&lt;/span> &lt;span class="n">Vref&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mf">24.8&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mf">24.8&lt;/span>&lt;span class="o">%&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">change&lt;/span> &lt;span class="n">to&lt;/span> &lt;span class="n">F1&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">528&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">change&lt;/span> &lt;span class="n">to&lt;/span> &lt;span class="n">F2&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">1068&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">change&lt;/span> &lt;span class="n">to&lt;/span> &lt;span class="n">F3&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">1560&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">change&lt;/span> &lt;span class="n">to&lt;/span> &lt;span class="n">F0&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">2112&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">out&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">Preloader&lt;/span> &lt;span class="n">serial&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">NOTICE&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">BL31&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">():&lt;/span>&lt;span class="n">v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">405&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">gb52c2eadd&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="n">derrick&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">huang&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">NOTICE&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">BL31&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">Built&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="mi">11&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mi">23&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="mi">47&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Aug&lt;/span> &lt;span class="mi">15&lt;/span> &lt;span class="mi">2022&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">spec&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mh">0x1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">ext&lt;/span> &lt;span class="mi">32&lt;/span>&lt;span class="n">k&lt;/span> &lt;span class="n">is&lt;/span> &lt;span class="ow">not&lt;/span> &lt;span class="n">valid&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">GICv3&lt;/span> &lt;span class="n">without&lt;/span> &lt;span class="n">legacy&lt;/span> &lt;span class="n">support&lt;/span> &lt;span class="n">detected&lt;/span>&lt;span class="o">.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">ARM&lt;/span> &lt;span class="n">GICv3&lt;/span> &lt;span class="n">driver&lt;/span> &lt;span class="n">initialized&lt;/span> &lt;span class="ow">in&lt;/span> &lt;span class="n">EL3&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">system&lt;/span> &lt;span class="n">boots&lt;/span> &lt;span class="n">from&lt;/span> &lt;span class="n">cpu&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">hwid&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">idle_st&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mh">0x21fff&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">pd_st&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mh">0x11fff9&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">repair_st&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="mh">0xfff70001&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">dfs&lt;/span> &lt;span class="n">DDR&lt;/span> &lt;span class="n">fsp_params&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">freq_mhz&lt;/span>&lt;span class="o">=&lt;/span> &lt;span class="mi">2112&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">dfs&lt;/span> &lt;span class="n">DDR&lt;/span> &lt;span class="n">fsp_params&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">freq_mhz&lt;/span>&lt;span class="o">=&lt;/span> &lt;span class="mi">528&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">dfs&lt;/span> &lt;span class="n">DDR&lt;/span> &lt;span class="n">fsp_params&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">freq_mhz&lt;/span>&lt;span class="o">=&lt;/span> &lt;span class="mi">1068&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">dfs&lt;/span> &lt;span class="n">DDR&lt;/span> &lt;span class="n">fsp_params&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">freq_mhz&lt;/span>&lt;span class="o">=&lt;/span> &lt;span class="mi">1560&lt;/span>&lt;span class="n">MHz&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">BL31&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">Initialising&lt;/span> &lt;span class="n">Exception&lt;/span> &lt;span class="n">Handling&lt;/span> &lt;span class="n">Framework&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">BL31&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">Initializing&lt;/span> &lt;span class="n">runtime&lt;/span> &lt;span class="n">services&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">WARNING&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">No&lt;/span> &lt;span class="n">OPTEE&lt;/span> &lt;span class="n">provided&lt;/span> &lt;span class="n">by&lt;/span> &lt;span class="n">BL2&lt;/span> &lt;span class="n">boot&lt;/span> &lt;span class="n">loader&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Booting&lt;/span> &lt;span class="n">device&lt;/span> &lt;span class="n">without&lt;/span> &lt;span class="n">OPTEE&lt;/span> &lt;span class="n">initialization&lt;/span>&lt;span class="o">.&lt;/span> &lt;span class="n">SMC&lt;/span>&lt;span class="err">`&lt;/span>&lt;span class="n">s&lt;/span> &lt;span class="n">destined&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="n">OPTEE&lt;/span> &lt;span class="n">will&lt;/span> &lt;span class="k">return&lt;/span> &lt;span class="n">SMC_UNK&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ERROR&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">Error&lt;/span> &lt;span class="n">initializing&lt;/span> &lt;span class="n">runtime&lt;/span> &lt;span class="n">service&lt;/span> &lt;span class="n">opteed_fast&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">BL31&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">Preparing&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="n">EL3&lt;/span> &lt;span class="n">exit&lt;/span> &lt;span class="n">to&lt;/span> &lt;span class="n">normal&lt;/span> &lt;span class="n">world&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">Entry&lt;/span> &lt;span class="n">point&lt;/span> &lt;span class="n">address&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mh">0x200000&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">INFO&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">SPSR&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mh">0x3c9&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">[&lt;/span> &lt;span class="mf">10.314850&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">BUG&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">spinlock&lt;/span> &lt;span class="n">bad&lt;/span> &lt;span class="n">magic&lt;/span> &lt;span class="n">on&lt;/span> &lt;span class="n">CPU&lt;/span>&lt;span class="c1">#5, systemd-udevd/394&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">[&lt;/span> &lt;span class="mf">10.316119&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">lock&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mh">0xffffffc012b05080&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">.&lt;/span>&lt;span class="n">magic&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">00000000&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">.&lt;/span>&lt;span class="n">owner&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">none&lt;/span>&lt;span class="o">&amp;gt;/-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">.&lt;/span>&lt;span class="n">owner_cpu&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>用了诱骗器让充电器输出固定的12V,就能跑起来&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> [ 10.305132] BUG: spinlock bad magic on CPU#7, systemd-udevd/379
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 10.305139] lock: 0xffffffc012a25080, .magic: 00000000, .owner: &amp;lt;none&amp;gt;/-1, .owner_cpu: 0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>HDMI 插上也没有反应，串口终端&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> [ 723.967060] rockchip-hdptx-phy-hdmi fed70000.hdmiphy: hdptx phy pll locked!
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 723.967381] rockchip-hdptx-phy-hdmi fed70000.hdmiphy: hdptx phy lane locked!
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.353844] Buffer I/O error on device mmcblk0p2, logical block 12289
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.354406] Buffer I/O error on device mmcblk0p2, logical block 141311
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.354819] Buffer I/O error on device mmcblk0p2, logical block 141312
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.355469] Buffer I/O error on device mmcblk0p2, logical block 141318
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.355885] Buffer I/O error on device mmcblk0p2, logical block 141319
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.356330] Buffer I/O error on device mmcblk0p2, logical block 141323
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.356738] Buffer I/O error on device mmcblk0p2, logical block 141324
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.357180] Buffer I/O error on device mmcblk0p2, logical block 141326
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.357586] Buffer I/O error on device mmcblk0p2, logical block 141327
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.357992] Buffer I/O error on device mmcblk0p2, logical block 141328
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.363448] Aborting journal on device mmcblk0p2-8.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.363592] JBD2: Error -5 detected when updating journal superblock for mmcblk0p2-8.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.364213] EXT4-fs (mmcblk0p2): I/O error while writing superblock
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.364331] EXT4-fs error (device mmcblk0p2): ext4_journal_check_start:83: Detected aborted journal
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.364484] EXT4-fs (mmcblk0p2): Remounting filesystem read-only
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.364594] EXT4-fs (mmcblk0p2): ext4_writepages: jbd2_start: 9223372036854775779 pages, ino 11320; err -30
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.418700] JBD2: Error while async write back metadata bh 814.
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.428108] EXT4-fs error (device mmcblk0p2): __ext4_find_entry:1611: inode #4508: comm systemd-udevd: reading directory lblock 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.428414] EXT4-fs (mmcblk0p2): I/O error while writing superblock
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.428590] EXT4-fs error (device mmcblk0p2): __ext4_find_entry:1611: inode #548: comm systemd-udevd: reading directory lblock 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.428767] EXT4-fs (mmcblk0p2): I/O error while writing superblock
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.428883] EXT4-fs error (device mmcblk0p2): __ext4_find_entry:1611: inode #2119: comm systemd-udevd: reading directory lblock 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.429062] EXT4-fs error (device mmcblk0p2): __ext4_find_entry:1611: inode #2: comm systemd-udevd: reading directory lblock 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 726.429233] EXT4-fs error (device mmcblk0p2): __ext4_find_entry:1611: inode #4508: comm systemd-udevd: reading directory lblock 0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这读取文件系统错误，有可能TF卡松动了，裸板的设计，没有外壳的时候TF卡确实很容易松动， 断电插紧重启即可&lt;/p>
+&lt;p>运行一会儿后又出现了问题。。。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> [ 1147.255838] rk806 spi2.0: SPI transfer timed out
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 1147.263313] spi_master spi2: failed to transfer one message from queue
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 1147.270938] cpu cpu0: rockchip_cpufreq_set_volt: failed to set voltage (925000 925000 950000 uV): -11
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 1147.278907] cpufreq: __target_index: Failed to change cpu frequency: -110
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 1147.489206] rk806 spi2.0: SPI transfer timed out
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>rk806 貌似是电源管理 IC，看样子有可能是充电协议握手出现了啥问题，先不管，断电重启，之后再说。&lt;/p>
+&lt;p>更换国内源，比如中科大 &lt;code>mirrors.ustc.edu.cn&lt;/code>，编辑 &lt;code>/etc/apt/sources.list&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> deb http://mirrors.ustc.edu.cn/ubuntu-ports/ focal main restricted universe multiverse
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> #deb-src http://mirrors.ustc.edu.cn/ubuntu-ports/ focal main restricted universe multiverse
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> deb http://mirrors.ustc.edu.cn/ubuntu-ports/ focal-security main restricted universe multiverse
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> #deb-src http://mirrors.ustc.edu.cn/ubuntu-ports/ focal-security main restricted universe multiverse
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> deb http://mirrors.ustc.edu.cn/ubuntu-ports/ focal-updates main restricted universe multiverse
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> #deb-src http://mirrors.ustc.edu.cn/ubuntu-ports/ focal-updates main restricted universe multiverse
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> deb http://mirrors.ustc.edu.cn/ubuntu-ports/ focal-backports main restricted universe multiverse
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> #deb-src http://mirrors.ustc.edu.cn/ubuntu-ports/ focal-backports main restricted universe multiverse
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>apt update&lt;/code>发现报错, 又报错了&lt;/p>
+&lt;p>按照通用做法&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 9B98116C9AA302C7
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>报错 gpg: keyserver receive failed: No data，于是去apt.radxa.com源看看&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> wget -O - apt.radxa.com/focal-stable/public.key | sudo apt-key add -
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="电源">电源
+&lt;/h2>&lt;p>PMU 是通过 I2C 连接到芯片的，可以在系统看到当前协商的电压：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> sensors tcpm_source_psy_4_0022-i2c-4-22
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>以及可以看到 typec 的相关信息&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> grep &amp;#34;&amp;#34; /sys/class/typec/port0/* 2&amp;gt;/dev/null
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>实际电压可以(需要除以~172.5)&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> awk &amp;#39;{printf (&amp;#34;%0.2f\n&amp;#34;,$1/172.5); }&amp;#39; &amp;lt;/sys/devices/iio_sysfs_trigger/subsystem/devices/iio\:device0/in_voltage6_raw
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 11.98
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="cpu">CPU
+&lt;/h2>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> cat /proc/cpuinfo
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo apt-get install cpufrequtils
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo cpufreq-info
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以看到最大频率为 2.4GHz， 以及 4个小核 1.8GHz
+用 7z 在没有风扇的情况下先跑个分看看情况，跑起来手摸cpu盖子还是很烫的&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> $ apt install p7zip
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> $ 7zr b
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 7-Zip (a) [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-05-21
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> p7zip Version 16.02 (locale=C.UTF-8,Utf16=on,HugeFiles=on,64 bits,8 CPUs LE)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> LE
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> CPU Freq: 64000000 - - - - - - - -
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> RAM size: 15722 MB, # CPU hardware threads: 8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> RAM usage: 1765 MB, # Benchmark threads: 8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Compressing | Decompressing
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Dict Speed Usage R/U Rating | Speed Usage R/U Rating
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> KiB/s % MIPS MIPS | KiB/s % MIPS MIPS
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 22: 13939 726 1867 13560 | 199330 682 2494 17002
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 23: 13416 748 1828 13670 | 193846 684 2452 16775
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 24: 12832 759 1818 13797 | 186688 681 2406 16385
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 25: 12244 758 1846 13980 | 179663 680 2350 15989
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ---------------------------------- | ------------------------------
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Avr: 748 1840 13752 | 682 2426 16538
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Tot: 715 2133 15145
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以看到这里的 speed 和 rating 是树莓派4B 的至少 3 倍了&lt;/p>
+&lt;p>尝试看看温度，用 ssh 登录试试，串口执行&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">ifconfig
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>看到ip，然后&lt;code>ssh root@ip&lt;/code>输入密码&lt;code>root&lt;/code>，报错&lt;code>Permission denied, please try again.&lt;/code>，在串口终端修改密码&lt;code>passwd root&lt;/code>为&lt;code>root&lt;/code>，还是不行，可能默认设置不允许 root 用户登录，修改&lt;code>vim /etc/ssh/sshd_config&lt;/code> 添加&lt;code>PermitRootLogin yes &lt;/code>后 重启服务&lt;code>systemctl restart sshd&lt;/code>即可&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> watch -n 0.1 cat /sys/class/thermal/thermal_zone0/temp
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>同时跑分，温度最高跑到了72℃，还是很凉快的。
+同时，看一下频率是否跑满了&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">watch -n 0.1 cpufreq-info -f -c 4
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>这里 -c 指令核心 id， 可以看到跑分时频率为 2400000Hz 或者 1800000Hz&lt;/p>&lt;/blockquote>
+&lt;p>到此为止，你以为真的跑到 2.4GHz 了吗，99.99%的可能并没有，只是显示 2.4GHz，最开始这个开发板甚至内置了一个测试软件来抽奖看自己买到的 CPU 处于什么水平。。。
+RK在rk35系列使用了&lt;code> PVTM (Process-Voltage-Temperature Monitor) （PVT）&lt;/code>来监控系统状态，有一个 MCU 专门来控制频率CPU 频率，以及 NPU GPU&lt;/p>
+&lt;p>Link: &lt;a class="link" href="https://www.cnx-software.com/2022/07/17/what-is-pvtm-or-why-your-rockchip-rk3588-cpu-may-not-reach-2-4-ghz/" target="_blank" rel="noopener"
+>What is PVTM? Or why your Rockchip RK3588 CPU may not reach 2.4 GHz&lt;/a>&lt;/p>
+&lt;p>Link: &lt;a class="link" href="cpufreq-rockchip.txt" >cpufreq-rockchip.txt&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> rock@rock-5b:~$ dmesg |grep pvtm
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 8.110543] rockchip-pvtm fda40000.pvtm: pvtm@0 probed
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 8.110598] rockchip-pvtm fda50000.pvtm: pvtm@1 probed
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 8.110647] rockchip-pvtm fda60000.pvtm: pvtm@2 probed
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 8.110693] rockchip-pvtm fdaf0000.pvtm: pvtm@3 probed
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 8.110736] rockchip-pvtm fdb30000.pvtm: pvtm@4 probed
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.051869] cpu cpu0: pvtm=1456
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.051948] cpu cpu0: pvtm-volt-sel=2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.060591] cpu cpu4: pvtm=1705
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.064527] cpu cpu4: pvtm-volt-sel=4
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.073916] cpu cpu6: pvtm=1724
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.077872] cpu cpu6: pvtm-volt-sel=5
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.162917] mali fb000000.gpu: pvtm=877
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.162950] mali fb000000.gpu: pvtm-volt-sel=3
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.346530] RKNPU fdab0000.npu: pvtm=880
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> [ 9.351791] RKNPU fdab0000.npu: pvtm-volt-sel=3
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>看不太懂，不知道每个数值对应了什么级别的频率&lt;/p>
+&lt;p>上面的信息是由内核报告的 &lt;code>Operating Performance Point (OPP)&lt;/code>, 但是实际跑的频率通过 &lt;code>ThomasKaiser/SBC-Bench.sh&lt;/code> 可以获得（内置的armbian-config命令中集成了此工具的，可以直接用），比如我的&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> Checking cpufreq OPP for cpu0-cpu3 (Cortex-A55):
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1800 Measured: 1798 (1798.646/1798.490/1798.372)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1608 Measured: 1614 (1614.427/1614.033/1613.875)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1416 Measured: 1414 (1415.323/1414.869/1414.627)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1200 Measured: 1233 (1233.787/1233.729/1233.585) (+2.8%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1008 Measured: 1007 (1007.980/1007.956/1007.524)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 816 Measured: 806 (806.096/806.077/806.039) (-1.2%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 600 Measured: 589 (589.884/589.422/589.281) (-1.8%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 408 Measured: 391 (391.542/391.489/391.356) (-4.2%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Checking cpufreq OPP for cpu4-cpu5 (Cortex-A76):
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 2400 Measured: 2227 (2227.990/2227.846/2227.750) (-7.2%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 2208 Measured: 2161 (2162.236/2161.558/2161.286) (-2.1%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 2016 Measured: 1998 (1998.559/1998.559/1998.414)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1800 Measured: 1826 (1826.351/1826.351/1826.271) (+1.4%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1608 Measured: 1623 (1623.824/1623.824/1623.744)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1416 Measured: 1442 (1442.152/1442.089/1441.869) (+1.8%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1200 Measured: 1197 (1197.094/1197.094/1196.904)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1008 Measured: 1002 (1002.915/1002.132/1002.060)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 816 Measured: 807 (808.040/806.980/806.826) (-1.1%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 600 Measured: 592 (592.867/592.828/592.802) (-1.3%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 408 Measured: 394 (394.914/394.905/394.842) (-3.4%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Checking cpufreq OPP for cpu6-cpu7 (Cortex-A76):
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 2400 Measured: 2243 (2244.059/2243.815/2243.718) (-6.5%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 2208 Measured: 2160 (2160.970/2160.925/2160.744) (-2.2%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 2016 Measured: 1990 (1990.232/1990.040/1990.040) (-1.3%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1800 Measured: 1812 (1812.294/1812.174/1812.055)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1608 Measured: 1604 (1604.397/1604.319/1604.203)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1416 Measured: 1421 (1421.929/1421.837/1421.837)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1200 Measured: 1214 (1214.996/1214.968/1214.912) (+1.2%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 1008 Measured: 1019 (1019.959/1019.934/1019.910) (+1.1%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 816 Measured: 818 (818.552/818.433/818.394)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 600 Measured: 592 (592.906/592.893/592.854) (-1.3%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Cpufreq OPP: 408 Measured: 394 (394.950/394.905/394.887) (-3.4%)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以看到，实际只有2.2GHz，和2.4GHz足足差了200MHz, 6.5%，确实很糟糕了。。。&lt;/p>
+&lt;h2 id="内存">内存
+&lt;/h2>&lt;p>查看频率：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> cat /sys/class/devfreq/dmc/cur_freq
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> cat /sys/kernel/debug/clk/clk_summary | grep ddr
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>官方说明： The ram for ROCK 5B is LPDDR 4x, two 32bits LPDDR 4x chips make 64bits, data frequency is up to 4224Mhz. ROCK 5B offers 4GB, 8GB and 16GB ram size options.&lt;/p>&lt;/blockquote>
+&lt;p>可以看到实际频率 &lt;code>1068000000， 1GHz&lt;/code>， 查看可用频率&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> cat /sys/class/devfreq/dmc/available_frequencies
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 528000000 1068000000 1560000000 2112000000
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> # 设置 DDR 频率，例如，设置 1560MHz
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> echo userspace &amp;gt; /sys/class/devfreq/dmc/governor
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> echo 1560000000 &amp;gt; /sys/class/devfreq/dmc/userspace/set_freq
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="hdmi输出">HDMI输出
+&lt;/h2>&lt;p>到此为止，HDMI 仍然没有输出，我的显示器是 2k(2560x1440)&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> cat /sys/class/drm/card0-HDMI-A-1/modes
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>发现没有 2k 的分辨率&lt;/p>
+&lt;p>换个 1080p 的显示器接上 HDMI，立马亮了，终端界面tty1出现了，没有桌面。&lt;/p>
+&lt;p>另外，在使用 debian 系统后，可以直接输出 1080p和4k输出，但均没有 2k 输出可以直接使用， 不过有个最简单的方法就是设置为 4k60fps，然后设置缩放200%即可，因为性能足够， 4k 也不卡。&lt;/p>
+&lt;h2 id="armbian">Armbian
+&lt;/h2>&lt;p>Armbian 适配得更好一点，推荐使用
+因为 GPU 驱动大多需要在 wayland 模式下使用，可以设置默认登录到 wayland 窗口管理模式，这样就不用每次登录时选择一次了&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> sudo vim /etc/gdm3/custom.conf
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>修改&lt;code>WaylandEnable=true&lt;/code>&lt;/p>
+&lt;p>另外，官网提供的链接不是最新的，可以到github.com/armbian/build/releases 找最新的。
+另外， github.com/amazingfate/armbian-rock5b-images 据说是内置了 GPU 相关的驱动，在官方还没完全支持 GPU 前可以尝试这个，具体看后面 GPU 使用部分。&lt;/p>
+&lt;h2 id="从nvme启动">从NVME启动
+&lt;/h2>&lt;p>SD 卡会比较慢，据说太慢还会影响到快充握手，因为快充握手协议是在系统驱动里面的，所以最好用 eMMc 或者 nvme ssd 或者 USB 启动读写更快。&lt;/p>
+&lt;p>启动流程: 内部有个叫 maskrom 的固件，会优先启动 SPI nor Flash -&amp;gt; sd -&amp;gt; eMMC&lt;/p>
+&lt;p>默认不支持从 nvme 启动，所以需要额外的引导，将引导保存到 SPI nor Flash中，然后这个固件再引导nvme的系统启动。&lt;/p>
+&lt;p>于是需要先更新 Nor Flash 的固件，使用 rk 官方的 rkdevtool，注意不能直接就给 nor flash 下载固件，还需要先给 maskrom 传一个用来和 rkdevtool 通讯以及写 flash 等操作的固件，这里名字叫 &lt;code>rk*_spl_loader.bin&lt;/code>，这个固件只会临时运行在内存中。&lt;/p>
+&lt;p>装 USB 驱动，然后打开 rkdevtool， 按住 maskroom 按钮，上电，软件会检测到设备。
+&lt;code>Write by address&lt;/code> 默认没勾上，注意勾上&lt;/p>
+&lt;p>&lt;img src="https://sharelter.github.io/p/rock5b/rkdevtool.jpg"
+width="974"
+height="458"
+srcset="https://sharelter.github.io/p/rock5b/rkdevtool_hu_889182b9cf6fe914.jpg 480w, https://sharelter.github.io/p/rock5b/rkdevtool_hu_5b7e454fc072bf07.jpg 1024w"
+loading="lazy"
+alt="rkdevtool"
+class="gallery-image"
+data-flex-grow="212"
+data-flex-basis="510px"
+>&lt;/p>
+&lt;p>然后下载系统，可以用官方的 debian 或者 armbian&lt;/p>
+&lt;p>armbian 页面有些提示比如带硬件加速的 kodi 使用&lt;/p>
+&lt;blockquote>
+&lt;p>PD is broken on most revisions that are in the wild and is causing boot loop. Workaround is to use stupid / fixed at 5 volts USB-C power supply.
+NVME boot can work with eMMC/SD boot or SPI. Check those instructions to install / update SPI boot loader.
+In order to enable 3D acceleration:&lt;/p>&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo add-apt-repository ppa:liujianfeng1994/panfork-mesa
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo add-apt-repository ppa:liujianfeng1994/rockchip-multimedia
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo apt update
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo apt dist-upgrade
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo apt install kodi
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>没买 m.2 转 USB转接器，所以直接把 nvme ssd 装到板子上，然后用 SD 卡进 debian 系统&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> rock@rock-5b:~$ lsblk
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> NAME MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> mtdblock0 31:0 0 16M 0 disk
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> mmcblk1 179:0 0 29.2G 0 disk
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ├─mmcblk1p1 179:1 0 512M 0 part /boot
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> └─mmcblk1p2 179:2 0 28.6G 0 part /
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> nvme0n1 259:0 0 931.5G 0 disk
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以看到 直接能读到 nvme0n1，直接操作这个固态即可，因为是初次测试，硬盘也是空的，直接&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> sudo xzcat Armbian_22.11.2_Rock-5b_jammy_legacy_5.10.110_gnome_desktop.img.xz | sudo dd of=/dev/nvme0n1 bs=1M status=progress
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>写入完成后&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> nvme0n1 259:0 0 931.5G 0 disk
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ├─nvme0n1p1 259:1 0 256M 0 part
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> └─nvme0n1p2 259:2 0 6.8G 0 part
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>然后断电，拔掉 SD 卡上电即可从 nvme ssd 中的系统启动&lt;/p>
+&lt;p>进系统后看看接口情况&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> sudo dmidecode | grep --color &amp;#34;PCI&amp;#34;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>speed test:
+iozone, fio&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> iozone -e -I -a -s 100M -r 4k -r 16k -r 512k -r 1024k -r 16384k -i 0 -i 1 -i 2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> random random bkwd record stride
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> kB reclen write rewrite read reread read write read rewrite read fwrite frewrite fread freread
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 102400 4 131760 167822 191255 204110 49352 108890
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 102400 16 400881 478178 340041 289103 164730 277126
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 102400 512 1444041 1676845 1619100 1573208 1314692 1723524
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 102400 1024 1797630 1854966 1684764 1714470 1559952 1803609
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> 102400 16384 2478047 2356570 2140251 2189357 2261106 2410056
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以看到 我的 SSD 是三星的 970 evo plus, 是支持 nvme3x4 的，1M 读写 分别是 1.68GB/s 1.79GB/s&lt;/p>
+&lt;p>虽然都是 PCIE3.0x4 接口，可以看到顺序读写都没有达到在电脑上 3.5GB/s 和 3.3GB/s 的水平，在板子上只能有 2.1GB/s 和 2.5GB/s，读写速度甚至没有写入速度高，随机 4k 读写也只能到 50MB/s 和 108MB/s，远远低于上面测评中的 &amp;gt;= 800MB/s，可见，开发板（armbian22）远远没有跑满 PCIE3.0x4 的速度，暂时不知是硬件还是软件的问题，以后发现了补上&lt;/p>
+&lt;p>另外，需要考虑散热问题，固态的发热量挺大的！可以通过&lt;code>/dev/nvme0n1&lt;/code>看到固态温度&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> sudo apt install nvme-cli
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo nvme smart-log /dev/nvme0 |grep -i &amp;#34;^Temperature&amp;#34;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="gpu-硬件解码">GPU 硬件解码
+&lt;/h2>&lt;p>装好 armbian 发现自带的 mpv 播放器只能软解，跑个 4k 直接把 CPU 吃得差不多一卡一卡。&lt;/p>
+&lt;p>按照 armbian 下载页面的源装了 kodi，不能直接用只能放声音没有画面，是因为无法解码导致的。&lt;/p>
+&lt;p>参考这个帖子的步骤即可（可以直接重装系统，amazingfate 打包了带这些软件包的系统，也可以自己手动更新包，自己更新会麻烦一点）：https://forum.radxa.com/t/rk3588-kodi-rkmpp-accelerated-decoding-working-out-of-box/12785/2 和 &lt;a class="link" href="https://forum.armbian.com/topic/24802-kodi-for-rk35xx-510-legacy-kernel/" target="_blank" rel="noopener"
+>https://forum.armbian.com/topic/24802-kodi-for-rk35xx-510-legacy-kernel/&lt;/a>&lt;/p>
+&lt;blockquote>
+&lt;p>以及 GPU 相关也可以参考玩 我的世界 的帖子： &lt;a class="link" href="https://forum.radxa.com/t/guide-run-minecraft-at-full-speed-on-rock-5b/11937/8" target="_blank" rel="noopener"
+>https://forum.radxa.com/t/guide-run-minecraft-at-full-speed-on-rock-5b/11937/8&lt;/a>&lt;/p>&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> You have to create the following udev rules to enable mpp and rga hardware acceleration:
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> KERNEL==&amp;#34;mpp_service&amp;#34;, MODE=&amp;#34;0660&amp;#34;, GROUP=&amp;#34;video&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> KERNEL==&amp;#34;rga&amp;#34;, MODE=&amp;#34;0660&amp;#34;, GROUP=&amp;#34;video&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> KERNEL==&amp;#34;system-dma32&amp;#34;, MODE=&amp;#34;0666&amp;#34;, GROUP=&amp;#34;video&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> KERNEL==&amp;#34;system-uncached-dma32&amp;#34;, MODE=&amp;#34;0666&amp;#34;, GROUP=&amp;#34;video&amp;#34; RUN+=&amp;#34;/usr/bin/chmod a+rw /dev/dma_heap&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> to /etc/udev/rules.d/11-rockchip-multimedia.rules
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> To enable libv4l-rkmpp for chromium, you have to install libv4l-rkmpp, v4l-utils and chromium-browser in this ppa:
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo apt install chromium-browser=$(apt-cache show chromium-browser|grep Version|grep rkmpp|cut -d &amp;#34; &amp;#34; -f2) chromium-codecs-ffmpeg-extra=$(apt-cache show chromium-browser|grep Version|grep rkmpp|cut -d &amp;#34; &amp;#34; -f2) libv4l-rkmpp, v4l-utils
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Then run the following commands:
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo ln -s /lib /usr/lib64
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> cd /usr/lib64/ &amp;amp;&amp;amp; sudo ln -s aarch64-linux-gnu/libv4l2.so.0.0.0 libv4l2.so
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> And add the following lines to /etc/rc.local:
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> echo dec &amp;gt; /dev/video-dec0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> chown root:video /dev/video-dec0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> chmod 0660 /dev/video-dec0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> echo enc &amp;gt; /dev/video-enc0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> chown root:video /dev/video-enc0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> chmod 0660 /dev/video-enc0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Add chrome flags &amp;#34;--use-gl=egl&amp;#34; to /etc/chromium-browser/default:
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> CHROMIUM_FLAGS=&amp;#34;--use-gl=egl&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ==================================================
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> chromium related FYI: https://github.com/JeffyCN/libv4l-rkmpp
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> sudo add-apt-repository ppa:liujianfeng1994/panfork-mesa
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo apt update
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> wget https://github.com/JeffyCN/rockchip_mirrors/raw/libmali/firmware/g610/mali_csffw.bin
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sudo mv mali_csffw.bin /lib/firmware
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>让ArchLinux运行在Btrfs上！</title><link>https://sharelter.github.io/p/archlinux-btrfs/</link><pubDate>Sun, 12 Mar 2023 09:21:48 +0000</pubDate><guid>https://sharelter.github.io/p/archlinux-btrfs/</guid><description>&lt;img src="https://sharelter.github.io/p/archlinux-btrfs/btrfs-logo.jpg" alt="Featured image of post 让ArchLinux运行在Btrfs上！" />&lt;h2 id="缘起">缘起
+&lt;/h2>&lt;p>最近主力laptop上面的Arch根目录余量一直在1.5GiB上下徘徊，
+今天滚完之后&lt;code>/&lt;/code>仅剩的900+MB 已经不能完成Arch的每日一滚了&lt;/p>
+&lt;p>因为我在安装这个Arch的时候使用了固定的分区方式，
+而且根目录只分配了20GB, 安装使用桌面作业系统的话，
+很轻松就可以吃光这点空间&lt;/p>
+&lt;p>之前的分区方式大概如下表&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-txt" data-lang="txt">&lt;span class="line">&lt;span class="cl">/dev/nvme0n1---
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> |
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --- partation1 - /root(ext4, 20G)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> |
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --- partation2 - /home(f2fs, 460G)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>不幸的是我在使用的磁盘里面没有留下空余的未分配空间给根目录分区扩充，
+比较好的方法是重装整个OS&lt;/p>
+&lt;p>如果不干预的话， 我的开发环境会在不远的将来boom掉&lt;/p>
+&lt;p>那么事不宜迟， 开工！&lt;/p>
+&lt;blockquote>
+&lt;p>在求教c10s之后，她扔出了如下表情
+&lt;img src="https://sharelter.github.io/p/archlinux-btrfs/btrfs-recommend.jpg"
+width="437"
+height="512"
+srcset="https://sharelter.github.io/p/archlinux-btrfs/btrfs-recommend_hu_dea6e9e33691df18.jpg 480w, https://sharelter.github.io/p/archlinux-btrfs/btrfs-recommend_hu_72903f8eaf84d948.jpg 1024w"
+loading="lazy"
+alt="recommend-btrfs"
+class="gallery-image"
+data-flex-grow="85"
+data-flex-basis="204px"
+>&lt;/p>&lt;/blockquote>
+&lt;p>嗯。。被强烈安利了btrfs&lt;/p>
+&lt;p>之前也有听过btrfs这个东东，但是&lt;del>因为懒&lt;/del>还没有用过&lt;/p>
+&lt;p>在Archwiki找到btrfs的&lt;a class="link" href="https://wiki.archlinux.org/title/Btrfs" target="_blank" rel="noopener"
+>wikipage&lt;/a>
+发现自带很多高级的功能 例如逻辑卷管理、快照、RAID &amp;hellip;etc.&lt;/p>
+&lt;blockquote>
+&lt;p>Btrfs is a modern copy on write (CoW) filesystem for Linux aimed at implementing advanced features while also focusing on fault tolerance, repair and easy administration. Jointly developed at multiple companies, Btrfs is licensed under the GPL and open for contribution from anyone.&lt;/p>&lt;/blockquote>
+&lt;p>看起来很好耶，上车！&lt;/p>
+&lt;blockquote>
+&lt;p>Tips: btrfs的开发十分活跃， 建议使用最新的内核，尽量避免使用祖传的老版本内核以得到最佳的体验&lt;/p>&lt;/blockquote>
+&lt;h2 id="创建文件系统">创建文件系统
+&lt;/h2>&lt;p>先在磁盘上面创建一个btrfs的文件系统
+&lt;code>sudo mkfs.btrfs -L mylabel /dev/nvme0n1p2&lt;/code>&lt;/p>
+&lt;p>btrfs也可以以霸占整个磁盘的方式进行使用， 此时这个磁盘的分区表就由btrfs接管了&lt;/p>
+&lt;p>因为我还需要ESP partation来使用UEFI启动， 就不可以使用这种方式&lt;/p>
+&lt;p>这里我的磁盘是分好了区的， 一个2GB的FAT32分区来实现UEFI启动 剩下的所有空间给btrfs&lt;/p>
+&lt;p>操作到这一步， 已经可以继续下一步往这些文件系统上面安装系统了&lt;/p>
+&lt;p>但是， 这样使用btrfs不能用上它的许多高级功能
+此时如果直接挂载这个分区的话， 可以享受到btrfs的CoW(写时复制) 特性来减少闪存设备的损耗，可以启用压缩、、类似的优势&lt;/p>
+&lt;p>继续操作， 需要使用用户空间的btrfs工具&lt;code>btrfs-progs&lt;/code>
+在ArchLinux上面要安装它，只需
+&lt;code>sudo pacman -S btrfs-progs&lt;/code>&lt;/p>
+&lt;h2 id="btrfs子卷">btrfs子卷
+&lt;/h2>&lt;p>创建好btrfs文件系统之后， 就拥有了一个&lt;code>ID=5&lt;/code>的顶级子卷&lt;/p>
+&lt;p>创建一个空闲的目录(例如&lt;code>/btrfs&lt;/code>) 把文件系统的顶级子卷挂上，
+就可以用 &lt;code>btrfs subvolume create /path/to/subvolume&lt;/code>来创建子卷&lt;/p>
+&lt;p>这里， 我为&lt;code>/root, /home, /swap&lt;/code>这三个目录在顶级子卷下面创建了三个子卷&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">btrfs subvoleme create /btrfs/subvol_root
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">btrfs subvolume create /btrfs/subvol_home
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Archwiki推荐为swap文件单独创建一个子卷直属于顶级子卷的子卷来挂载:
+&lt;code>btrfs subvolume create /btrfs/@swap&lt;/code>&lt;/p>
+&lt;p>btrfs-progs 6.1版本之后，提供了一个直接创建swap文件的命令:
+&lt;code>btrfs filesystem mkswapfile --size 8g /btrfs/@swap/swapfile&lt;/code>&lt;/p>
+&lt;p>可以通过&lt;code>--size&lt;/code>来定义创建的缓存文件的大小，这样创建出来的swap文件就可以直接挂载了～&lt;/p>
+&lt;p>通过&lt;code>btrfs subvolume list -p /mnt&lt;/code> 可以列出文件系统下面的子卷&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-txt" data-lang="txt">&lt;span class="line">&lt;span class="cl">ID 256 gen 10069 parent 5 top level 5 path subvol_root
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ID 257 gen 10069 parent 5 top level 5 path subvol_home
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ID 258 gen 9195 parent 5 top level 5 path @swap
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ID 259 gen 17 parent 256 top level 256 path subvol_root/var/lib/portables
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ID 260 gen 18 parent 256 top level 256 path subvol_root/var/lib/machines
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上面是我的子卷列表&lt;/p>
+&lt;h2 id="挂载">挂载
+&lt;/h2>&lt;p>在挂载的时候加上&lt;code>subvol=/path/to/subvolume&lt;/code>或者&lt;code>subvolid=?&lt;/code>，btrfs子卷就可以像文件系统分区一样被挂载&lt;/p>
+&lt;p>推荐创建一个子卷来挂载根目录，这样会为以后更改子卷布局和快照带来非常大的便利&lt;/p>
+&lt;p>我添加了 &lt;code>compress=zstd&lt;/code>启用zstd压缩方式，&lt;code>discard=async&lt;/code>启用SSD-TRIM 参数
+Update: 去掉了&lt;code>autodefrag&lt;/code>,在SSD上面使用这个选项弊大于利&lt;/p>
+&lt;p>因为是在安装过程中操作， 挂载的选项都会被&lt;code>genfstab&lt;/code>自动插到&lt;code>/etc/fstab&lt;/code>当中&lt;/p>
+&lt;p>我的&lt;code>/etc/fstab&lt;/code>如下:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-txt" data-lang="txt">&lt;span class="line">&lt;span class="cl"># /dev/nvme0n1p2 LABEL=Arch
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">UUID=efeb8313-4210-4499-a805-d0f97e57c549 / btrfs rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=256,subvol=/subvol_root 0 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># /dev/nvme0n1p1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">UUID=45BB-F7D1 /boot vfat rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro 0 2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># /dev/nvme0n1p2 LABEL=Arch
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">UUID=efeb8313-4210-4499-a805-d0f97e57c549 /home btrfs rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=257,subvol=/subvol_home 0 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># /dev/nvme0n1p2 LABEL=Arch
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">UUID=efeb8313-4210-4499-a805-d0f97e57c549 /swap btrfs rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,autodefrag,subvolid=258,subvol=/@swap 0 0
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">/swap/swapfile none swap defaults 0 0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="检查文件系统错误">检查文件系统错误
+&lt;/h2>&lt;p>没有效验的文件系统，文件损坏是无声发生的&lt;/p>
+&lt;p>btrfs提供了&lt;code>scrub&lt;/code>来进行在线的文件系统检查&lt;/p>
+&lt;p>BtrfsWiki这样写道：&lt;/p>
+&lt;blockquote>
+&lt;p>Btrfs scrub is &amp;ldquo;[a]n online filesystem checking tool. Reads all the data and metadata on the filesystem and uses checksums and the duplicate copies from RAID storage to identify and repair any corrupt data.&amp;rdquo;&lt;/p>&lt;/blockquote>
+&lt;p>挂上文件系统的根目录进行一次扫描操作: &lt;code>sudo btrfs scrub start /&lt;/code>&lt;/p>
+&lt;p>查看进度: &lt;code>sudo btrfs scrub status /&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-txt" data-lang="txt">&lt;span class="line">&lt;span class="cl">UUID: efeb8313-4210-4499-a805-d0f97e57c549
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Scrub started: Sun Mar 12 19:53:53 2023
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Status: running
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Duration: 0:00:05
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Time left: 0:00:14
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ETA: Sun Mar 12 19:54:16 2023
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Total to scrub: 93.21GiB
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Bytes scrubbed: 24.29GiB (26.06%)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Rate: 4.86GiB/s
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">Error summary: no errors found
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>扫描只用了14秒， 非常快！&lt;/p>
+&lt;h2 id="end">End
+&lt;/h2>&lt;p>我也是刚刚上手btrfs, 如果有小可爱有更好的建议或者发现哪里出错了，欢迎评论 or 提出PR~&lt;/p></description></item><item><title>安装MacOS9.2.2中文版</title><link>https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/</link><pubDate>Thu, 29 Dec 2022 19:38:57 +0800</pubDate><guid>https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/</guid><description>&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/check.jpg" alt="Featured image of post 安装MacOS9.2.2中文版" />&lt;p>因为我手边只有一台在laptop上面拆下来的DVD Writer, 而且这货所使用的接口并不是标准的SATA接口，
+而是一种缩短了电源部分，只留下5V的东西。&lt;/p>
+&lt;p>苦于缺少各种条件， 刻录MacOS9 光盘的操作等了好多天才得以完成&lt;br>
+&lt;del>我不会说我跑去借了一台x86计算机来做&lt;/del>&lt;/p>
+&lt;p>这个iso文件直接写进USB存储器里面是没有办法正常进行安装的&lt;br>
+去Google了一下， 似乎是MacOS9会检测安装介质是否可写&lt;/p>
+&lt;p>&lt;del>如果发现可写，就会立即终止启动进程&lt;/del>&lt;/p>
+&lt;p>启动的时候按住Option键， 在CD光盘上面启动，如果顺利的话， 大概会是下图这个样子
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/start.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/start_hu_3ffcaca7f4aad245.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/start_hu_81da9c2947da956f.jpg 1024w"
+loading="lazy"
+alt="start.jpg"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>经过一番加载和SuperDrive的轰鸣声(这东西真的好吵)之后，顺利进入到了MacOS9的LiveCD System
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/home.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/home_hu_aae9bcf0c9a096ba.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/home_hu_98715503da32faa4.jpg 1024w"
+loading="lazy"
+alt="home"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>系统里面出现的文字几乎都是简体中文字符(zh-cn), 不过编码方式和现在流行的不一样？&lt;/p>
+&lt;p>直接执行MacOS安装就可以开始把MacOS9 安装进磁盘里面
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/check.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/check_hu_afa93ecf7d5a92cc.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/check_hu_f59458f39a31f112.jpg 1024w"
+loading="lazy"
+alt="check"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>一路选择下一步，就可以开始安装作业系统啦
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/install.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/install_hu_8f1cdc0a6dd0d430.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/install_hu_b5aeef9d092f391e.jpg 1024w"
+loading="lazy"
+alt="install"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>大约十分钟后， 会提示作业系统安装好了， 可以进行重新启动了&lt;/p>
+&lt;p>这里进入的还是MacOS X 10.4， 选中刚刚装好的MacOS9分区之后,&lt;br>
+是可以成功开起Classic环境的
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/classic.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/classic_hu_cc0ae8e7b4b08afc.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/classic_hu_585399ab0873b4f8.jpg 1024w"
+loading="lazy"
+alt="classic"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>不过。。。这个怎么看起来像是在MacOS X 里面又运行了一个MacOS 9 的虚拟机呀。&lt;/p></description></item><item><title>折腾ArchLinux on Chromebook</title><link>https://sharelter.github.io/p/asus-chromebook/</link><pubDate>Tue, 20 Dec 2022 09:17:13 +0000</pubDate><guid>https://sharelter.github.io/p/asus-chromebook/</guid><description>&lt;img src="https://sharelter.github.io/p/asus-chromebook/overview.jpg" alt="Featured image of post 折腾ArchLinux on Chromebook" />&lt;p>受到Apple M1的持久续航的启发， 想到会不会Arm的laptop的续航会比较可观&lt;br>
+开始着手搜寻各种arm构架的laptop&lt;/p>
+&lt;p>可选项有如下几个:&lt;/p>
+&lt;ul>
+&lt;li>之前听闻华为擎云L410,但是&lt;del>过于灵车&lt;/del>,而且价格超出预算\&lt;/li>
+&lt;li>马上要来的Thinkpad x13s看上去非常诱人, 但是售价也是非常的感人\&lt;/li>
+&lt;li>开源社区的Pinebook Pro看起来很合适, 无奈大陆购买比较困难\&lt;/li>
+&lt;li>各种型号的Chromebook, 价格低廉, &lt;del>做工精美&lt;/del>, 就是它了&lt;/li>
+&lt;/ul>
+&lt;p>在逛某鱼的时候发现有ASUS C100P这样一台RK3288的本本, 去查了一下发现它出现在了ArchLinuxArm的硬件支持列表上面
+顺着这个路线, 我又找到了它的继任型号C101P, 使用RK3399，在今天还可堪一用&lt;/p>
+&lt;p>最终使用480CNY购入了一台橙色很新的C101P&lt;/p>
+&lt;p>到手之后，键盘里面几乎没有灰尘, 屏幕和外壳上面没有划痕，nice&lt;br>
+但是10.1寸的屏幕拿来日常用比较费力，而且分辨率只有1280x720(后面出掉也主要是这个原因)&lt;/p>
+&lt;p>ChromeOS的原生应用运行十分流畅，不过这些功能都是使用Chrome的web端&lt;br>
+720p的视频解码它还可以对付，但是1080P以上的卡顿的几乎完全不能忍&lt;/p>
+&lt;p>&lt;img src="https://sharelter.github.io/p/asus-chromebook/chromeos.jpg"
+width="1280"
+height="800"
+srcset="https://sharelter.github.io/p/asus-chromebook/chromeos_hu_8857cf1c4a25efbd.jpg 480w, https://sharelter.github.io/p/asus-chromebook/chromeos_hu_fd2fb3eee0f9776c.jpg 1024w"
+loading="lazy"
+alt="chromeos"
+class="gallery-image"
+data-flex-grow="160"
+data-flex-basis="384px"
+>
+ChromeOS提供的LInux环境是使用容器实现的,所以性能十分垃圾，只是使用命令行打开ranger文件管理器就要等待30seconds&lt;br>
+这样的性能显然不是RK3399应有的水平, 开始动了换掉ChromeOS的想法&lt;/p>
+&lt;p>找到ArchLinuxArm的&lt;a class="link" href="https://archlinuxarm.org/platforms/armv8/rockchip/asus-chromebook-flip-c101pa#installation" target="_blank" rel="noopener"
+>文档&lt;/a>, 发现可以通过启动外置系统的方式来把Arch装进sdcard里面&lt;br>
+成功装进去之后大概是酱紫的:
+&lt;img src="https://sharelter.github.io/p/asus-chromebook/overview.jpg"
+width="1280"
+height="720"
+srcset="https://sharelter.github.io/p/asus-chromebook/overview_hu_377b9479c0c67408.jpg 480w, https://sharelter.github.io/p/asus-chromebook/overview_hu_d7d1e1307de33ff9.jpg 1024w"
+loading="lazy"
+alt="overview.jpg"
+class="gallery-image"
+data-flex-grow="177"
+data-flex-basis="426px"
+>&lt;/p>
+&lt;p>能看到我给KDE装了一个漂亮的主题，同时还开了一点东西，&lt;br>
+这些能在这一台10.1寸的小本本上面完成在我看来是非常awesome的&lt;/p>
+&lt;p>它的续航果然还不错，虽然电池只有30+Wh, 但是它的峰值功耗也只有6Watt, 轻度使用大概能有6hr的续航&lt;/p>
+&lt;p>键盘的体验很熟悉，很像是我接触到的第一台laptop(它也是ASUS) 这样的键程对于10.1寸的laptop来说已经算是很棒了&lt;/p>
+&lt;p>RK3399可以使用主线内核，这个本本的硬件信息如下图&lt;br>
+&lt;img src="https://sharelter.github.io/p/asus-chromebook/cpu.jpg"
+width="613"
+height="331"
+srcset="https://sharelter.github.io/p/asus-chromebook/cpu_hu_27e739b6b8c95207.jpg 480w, https://sharelter.github.io/p/asus-chromebook/cpu_hu_58019acba5b463c7.jpg 1024w"
+loading="lazy"
+alt="cpu"
+class="gallery-image"
+data-flex-grow="185"
+data-flex-basis="444px"
+>&lt;/p>
+&lt;p>下面就到了折腾时间&lt;br>
+这台Chromebook C101P 的网卡是诡异的Marvell,需要额外的firmware才能工作&lt;br>
+&lt;img src="https://sharelter.github.io/p/asus-chromebook/nic.jpg"
+width="1280"
+height="960"
+srcset="https://sharelter.github.io/p/asus-chromebook/nic_hu_3d4ee9b523385d5e.jpg 480w, https://sharelter.github.io/p/asus-chromebook/nic_hu_861b491165164a2c.jpg 1024w"
+loading="lazy"
+alt="marvell_nic"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>archlinuxarm的包维护状况似乎不太好，fcitx5-rime的整套东西都是炸的&lt;br>
+&lt;img src="https://sharelter.github.io/p/asus-chromebook/rime.jpg"
+width="687"
+height="197"
+srcset="https://sharelter.github.io/p/asus-chromebook/rime_hu_125c1c213d9c3892.jpg 480w, https://sharelter.github.io/p/asus-chromebook/rime_hu_ed6d5b8b0aa78d5c.jpg 1024w"
+loading="lazy"
+alt="rime"
+class="gallery-image"
+data-flex-grow="348"
+data-flex-basis="836px"
+>&lt;/p>
+&lt;p>睡眠则是会直接睡死,如果在使用的过程当中不幸按到sleep， 那么只有强制shutdown才能让它再次醒过来&lt;/p>
+&lt;p>声音没有办法工作似乎是Chromebook的通病？我的这台也不例外，虽然按wiki调教过之后，扬声器可以勉强工作
+但是我更常用的3.5mm接口却完全不能使用&lt;/p>
+&lt;p>虽然这颗Soc上面带的Mali T860MP4有Panfrost可以用，可以满足像KDE/Gnome这样的比较复杂的桌面环境的流畅使用&lt;br>
+但还是比较buggy&lt;/p>
+&lt;p>在小伙伴的鼓动下，我尝试了在这台机器上面启动Minecraft,尝试直接使用HMCL来下载游戏, 果然会报错&lt;/p>
+&lt;p>到了这个时候，我已经折腾的筋疲力尽, 不想继续再折腾的路上走的更远了&lt;/p>
+&lt;p>可惜的是, 我没有测试过使用它进行做一些开发环境的工作就把它又出掉了，不过在这样小的屏幕上面develop的体验不会很好吧&lt;/p></description></item><item><title>Powerbook G4 Titanium上手体验</title><link>https://sharelter.github.io/p/powerbook-first-look/</link><pubDate>Fri, 16 Dec 2022 09:17:13 +0000</pubDate><guid>https://sharelter.github.io/p/powerbook-first-look/</guid><description>&lt;img src="https://sharelter.github.io/p/powerbook-first-look/macos9.jpg" alt="Featured image of post Powerbook G4 Titanium上手体验" />&lt;p>一直想拥有一台ppc构架的计算机，但是一直没有真的买下来过&lt;br>
+虽然中间曾多次&lt;del>漫步海鲜市场&lt;/del>，但也只是浏览&lt;/p>
+&lt;p>n天前我结识了一只收藏古董硬件的小可爱，经过一番友好的交流，得知他有一台橙色尚可的Powerbook, 遂立刻买入&lt;/p>
+&lt;p>这台PowerbookG4拥有667Mhz的IBM PowerPC构架中央处理器，ATI Mobility显示卡，512MB DDR，80GB HDD，另外还配备了Airport Card&lt;br>
+(在当时WLAN还是没有推广开的先进技术，属于选配部件&lt;/p>
+&lt;p>如果把它和发布时间只相差一年的PowerbookG3放在一起，难以相信这是同一个时代的产品&lt;/p>
+&lt;p>令我惊讶的是2001年出厂的它，历经21年的岁月洗礼，它所配备的锂电池居然还能有2hr的续航时间，没有死掉。&lt;br>
+屏幕上面只有一条划痕， 钛合金的外壳也只有浅浅的几道痕迹&lt;br>
+它的上一任主人一定也是比较爱惜它吧。。。&lt;/p>
+&lt;p>它的脸大概是酱紫的
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/front.jpg"
+width="1512"
+height="1134"
+srcset="https://sharelter.github.io/p/powerbook-first-look/front_hu_b9adfc1e66f05f42.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/front_hu_c77c35eada1f7f76.jpg 1024w"
+loading="lazy"
+alt="front"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>我第一眼注意到的是它的边框&lt;br>
+即使是以现在的标准来评判，这样的边框也能称得上窄(后面的铝合金G4还要更窄一些)&lt;br>
+这在当时的笔记型计算机市场一定能惊艳到很多人&lt;/p>
+&lt;p>半透明的键盘非常有感觉，看起来很漂亮。键程是那个年代的笔记本的标准长度，敲起来有些老ThinkPad的感觉&lt;br>
+按键上面的刻字是倾斜的，是水果的独特味道？&lt;/p>
+&lt;p>屏幕的转轴是某种塑料材质。。而且是使用螺钉固定在背部的，长时间使用之后很容易发生断裂。。&lt;br>
+上一任主人也特别提醒我打开盖子的时候动作要轻轻的&lt;/p>
+&lt;p>我觉得Powerbook G4的可维护性做的很好， 如果你想要清理灰尘或者添加记忆体的话，在键盘正面就能直接完成
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/keyboard.jpg"
+width="4096"
+height="2731"
+srcset="https://sharelter.github.io/p/powerbook-first-look/keyboard_hu_393f53f7efec4024.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/keyboard_hu_87e38bccf98d47a7.jpg 1024w"
+loading="lazy"
+alt="keyboard"
+class="gallery-image"
+data-flex-grow="149"
+data-flex-basis="359px"
+>
+只需要把键盘最上面的旋钮转180度，再扣住键盘两边的卡扣就可以把键盘拿下来。&lt;/p>
+&lt;p>值得一提的是键盘背面有磁铁用来让键盘平铺在金属框架上面的时候保持平整&lt;/p>
+&lt;p>拧下背面的所有六角螺丝就可以取下底壳
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/back.jpg"
+width="2436"
+height="1827"
+srcset="https://sharelter.github.io/p/powerbook-first-look/back_hu_88ffc23d770ac60c.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/back_hu_218896dc8cdb04fe.jpg 1024w"
+loading="lazy"
+alt="back"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>
+那个时候的PCB还不是全黑(好像黑色会增加科技感？)&lt;br>
+散热风扇也不是现代笔记型计算机上常用的涡轮风扇,而使用了轴流风扇&lt;/p>
+&lt;p>这台PowerBook支援的作业系统版本是MacOS9.2到10.4,跨越了整个从ppc到x86的迁移过程&lt;/p>
+&lt;p>这次时间仓促，就先拿MacOS9.2.2试试水，等后面有时间折腾光盘了再回来玩。
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/macos9.jpg"
+width="2436"
+height="1124"
+srcset="https://sharelter.github.io/p/powerbook-first-look/macos9_hu_ac4bcf1975d1b832.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/macos9_hu_4183b7117d4cf19d.jpg 1024w"
+loading="lazy"
+alt="macos9"
+class="gallery-image"
+data-flex-grow="216"
+data-flex-basis="520px"
+>&lt;/p></description></item></channel></rss>

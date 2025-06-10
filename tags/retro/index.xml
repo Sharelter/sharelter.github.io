@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Retro on Sharelter</title><link>https://sharelter.github.io/tags/retro/</link><description>Recent content in Retro on Sharelter</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 29 Dec 2022 19:38:57 +0800</lastBuildDate><atom:link href="https://sharelter.github.io/tags/retro/index.xml" rel="self" type="application/rss+xml"/><item><title>安装MacOS9.2.2中文版</title><link>https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/</link><pubDate>Thu, 29 Dec 2022 19:38:57 +0800</pubDate><guid>https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/</guid><description>&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/check.jpg" alt="Featured image of post 安装MacOS9.2.2中文版" />&lt;p>因为我手边只有一台在laptop上面拆下来的DVD Writer, 而且这货所使用的接口并不是标准的SATA接口，
+而是一种缩短了电源部分，只留下5V的东西。&lt;/p>
+&lt;p>苦于缺少各种条件， 刻录MacOS9 光盘的操作等了好多天才得以完成&lt;br>
+&lt;del>我不会说我跑去借了一台x86计算机来做&lt;/del>&lt;/p>
+&lt;p>这个iso文件直接写进USB存储器里面是没有办法正常进行安装的&lt;br>
+去Google了一下， 似乎是MacOS9会检测安装介质是否可写&lt;/p>
+&lt;p>&lt;del>如果发现可写，就会立即终止启动进程&lt;/del>&lt;/p>
+&lt;p>启动的时候按住Option键， 在CD光盘上面启动，如果顺利的话， 大概会是下图这个样子
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/start.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/start_hu_3ffcaca7f4aad245.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/start_hu_81da9c2947da956f.jpg 1024w"
+loading="lazy"
+alt="start.jpg"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>经过一番加载和SuperDrive的轰鸣声(这东西真的好吵)之后，顺利进入到了MacOS9的LiveCD System
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/home.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/home_hu_aae9bcf0c9a096ba.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/home_hu_98715503da32faa4.jpg 1024w"
+loading="lazy"
+alt="home"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>系统里面出现的文字几乎都是简体中文字符(zh-cn), 不过编码方式和现在流行的不一样？&lt;/p>
+&lt;p>直接执行MacOS安装就可以开始把MacOS9 安装进磁盘里面
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/check.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/check_hu_afa93ecf7d5a92cc.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/check_hu_f59458f39a31f112.jpg 1024w"
+loading="lazy"
+alt="check"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>一路选择下一步，就可以开始安装作业系统啦
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/install.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/install_hu_8f1cdc0a6dd0d430.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/install_hu_b5aeef9d092f391e.jpg 1024w"
+loading="lazy"
+alt="install"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>大约十分钟后， 会提示作业系统安装好了， 可以进行重新启动了&lt;/p>
+&lt;p>这里进入的还是MacOS X 10.4， 选中刚刚装好的MacOS9分区之后,&lt;br>
+是可以成功开起Classic环境的
+&lt;img src="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/classic.jpg"
+width="4096"
+height="3072"
+srcset="https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/classic_hu_cc0ae8e7b4b08afc.jpg 480w, https://sharelter.github.io/p/%E5%AE%89%E8%A3%85macos9.2.2%E4%B8%AD%E6%96%87%E7%89%88/classic_hu_585399ab0873b4f8.jpg 1024w"
+loading="lazy"
+alt="classic"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>不过。。。这个怎么看起来像是在MacOS X 里面又运行了一个MacOS 9 的虚拟机呀。&lt;/p></description></item><item><title>Powerbook G4 Titanium上手体验</title><link>https://sharelter.github.io/p/powerbook-first-look/</link><pubDate>Fri, 16 Dec 2022 09:17:13 +0000</pubDate><guid>https://sharelter.github.io/p/powerbook-first-look/</guid><description>&lt;img src="https://sharelter.github.io/p/powerbook-first-look/macos9.jpg" alt="Featured image of post Powerbook G4 Titanium上手体验" />&lt;p>一直想拥有一台ppc构架的计算机，但是一直没有真的买下来过&lt;br>
+虽然中间曾多次&lt;del>漫步海鲜市场&lt;/del>，但也只是浏览&lt;/p>
+&lt;p>n天前我结识了一只收藏古董硬件的小可爱，经过一番友好的交流，得知他有一台橙色尚可的Powerbook, 遂立刻买入&lt;/p>
+&lt;p>这台PowerbookG4拥有667Mhz的IBM PowerPC构架中央处理器，ATI Mobility显示卡，512MB DDR，80GB HDD，另外还配备了Airport Card&lt;br>
+(在当时WLAN还是没有推广开的先进技术，属于选配部件&lt;/p>
+&lt;p>如果把它和发布时间只相差一年的PowerbookG3放在一起，难以相信这是同一个时代的产品&lt;/p>
+&lt;p>令我惊讶的是2001年出厂的它，历经21年的岁月洗礼，它所配备的锂电池居然还能有2hr的续航时间，没有死掉。&lt;br>
+屏幕上面只有一条划痕， 钛合金的外壳也只有浅浅的几道痕迹&lt;br>
+它的上一任主人一定也是比较爱惜它吧。。。&lt;/p>
+&lt;p>它的脸大概是酱紫的
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/front.jpg"
+width="1512"
+height="1134"
+srcset="https://sharelter.github.io/p/powerbook-first-look/front_hu_b9adfc1e66f05f42.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/front_hu_c77c35eada1f7f76.jpg 1024w"
+loading="lazy"
+alt="front"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>我第一眼注意到的是它的边框&lt;br>
+即使是以现在的标准来评判，这样的边框也能称得上窄(后面的铝合金G4还要更窄一些)&lt;br>
+这在当时的笔记型计算机市场一定能惊艳到很多人&lt;/p>
+&lt;p>半透明的键盘非常有感觉，看起来很漂亮。键程是那个年代的笔记本的标准长度，敲起来有些老ThinkPad的感觉&lt;br>
+按键上面的刻字是倾斜的，是水果的独特味道？&lt;/p>
+&lt;p>屏幕的转轴是某种塑料材质。。而且是使用螺钉固定在背部的，长时间使用之后很容易发生断裂。。&lt;br>
+上一任主人也特别提醒我打开盖子的时候动作要轻轻的&lt;/p>
+&lt;p>我觉得Powerbook G4的可维护性做的很好， 如果你想要清理灰尘或者添加记忆体的话，在键盘正面就能直接完成
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/keyboard.jpg"
+width="4096"
+height="2731"
+srcset="https://sharelter.github.io/p/powerbook-first-look/keyboard_hu_393f53f7efec4024.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/keyboard_hu_87e38bccf98d47a7.jpg 1024w"
+loading="lazy"
+alt="keyboard"
+class="gallery-image"
+data-flex-grow="149"
+data-flex-basis="359px"
+>
+只需要把键盘最上面的旋钮转180度，再扣住键盘两边的卡扣就可以把键盘拿下来。&lt;/p>
+&lt;p>值得一提的是键盘背面有磁铁用来让键盘平铺在金属框架上面的时候保持平整&lt;/p>
+&lt;p>拧下背面的所有六角螺丝就可以取下底壳
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/back.jpg"
+width="2436"
+height="1827"
+srcset="https://sharelter.github.io/p/powerbook-first-look/back_hu_88ffc23d770ac60c.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/back_hu_218896dc8cdb04fe.jpg 1024w"
+loading="lazy"
+alt="back"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>
+那个时候的PCB还不是全黑(好像黑色会增加科技感？)&lt;br>
+散热风扇也不是现代笔记型计算机上常用的涡轮风扇,而使用了轴流风扇&lt;/p>
+&lt;p>这台PowerBook支援的作业系统版本是MacOS9.2到10.4,跨越了整个从ppc到x86的迁移过程&lt;/p>
+&lt;p>这次时间仓促，就先拿MacOS9.2.2试试水，等后面有时间折腾光盘了再回来玩。
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/macos9.jpg"
+width="2436"
+height="1124"
+srcset="https://sharelter.github.io/p/powerbook-first-look/macos9_hu_ac4bcf1975d1b832.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/macos9_hu_4183b7117d4cf19d.jpg 1024w"
+loading="lazy"
+alt="macos9"
+class="gallery-image"
+data-flex-grow="216"
+data-flex-basis="520px"
+>&lt;/p></description></item></channel></rss>

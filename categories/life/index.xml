@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Life on Sharelter</title><link>https://sharelter.github.io/categories/life/</link><description>Recent content in Life on Sharelter</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Fri, 16 Dec 2022 09:17:13 +0000</lastBuildDate><atom:link href="https://sharelter.github.io/categories/life/index.xml" rel="self" type="application/rss+xml"/><item><title>Powerbook G4 Titanium上手体验</title><link>https://sharelter.github.io/p/powerbook-first-look/</link><pubDate>Fri, 16 Dec 2022 09:17:13 +0000</pubDate><guid>https://sharelter.github.io/p/powerbook-first-look/</guid><description>&lt;img src="https://sharelter.github.io/p/powerbook-first-look/macos9.jpg" alt="Featured image of post Powerbook G4 Titanium上手体验" />&lt;p>一直想拥有一台ppc构架的计算机，但是一直没有真的买下来过&lt;br>
+虽然中间曾多次&lt;del>漫步海鲜市场&lt;/del>，但也只是浏览&lt;/p>
+&lt;p>n天前我结识了一只收藏古董硬件的小可爱，经过一番友好的交流，得知他有一台橙色尚可的Powerbook, 遂立刻买入&lt;/p>
+&lt;p>这台PowerbookG4拥有667Mhz的IBM PowerPC构架中央处理器，ATI Mobility显示卡，512MB DDR，80GB HDD，另外还配备了Airport Card&lt;br>
+(在当时WLAN还是没有推广开的先进技术，属于选配部件&lt;/p>
+&lt;p>如果把它和发布时间只相差一年的PowerbookG3放在一起，难以相信这是同一个时代的产品&lt;/p>
+&lt;p>令我惊讶的是2001年出厂的它，历经21年的岁月洗礼，它所配备的锂电池居然还能有2hr的续航时间，没有死掉。&lt;br>
+屏幕上面只有一条划痕， 钛合金的外壳也只有浅浅的几道痕迹&lt;br>
+它的上一任主人一定也是比较爱惜它吧。。。&lt;/p>
+&lt;p>它的脸大概是酱紫的
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/front.jpg"
+width="1512"
+height="1134"
+srcset="https://sharelter.github.io/p/powerbook-first-look/front_hu_b9adfc1e66f05f42.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/front_hu_c77c35eada1f7f76.jpg 1024w"
+loading="lazy"
+alt="front"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>&lt;/p>
+&lt;p>我第一眼注意到的是它的边框&lt;br>
+即使是以现在的标准来评判，这样的边框也能称得上窄(后面的铝合金G4还要更窄一些)&lt;br>
+这在当时的笔记型计算机市场一定能惊艳到很多人&lt;/p>
+&lt;p>半透明的键盘非常有感觉，看起来很漂亮。键程是那个年代的笔记本的标准长度，敲起来有些老ThinkPad的感觉&lt;br>
+按键上面的刻字是倾斜的，是水果的独特味道？&lt;/p>
+&lt;p>屏幕的转轴是某种塑料材质。。而且是使用螺钉固定在背部的，长时间使用之后很容易发生断裂。。&lt;br>
+上一任主人也特别提醒我打开盖子的时候动作要轻轻的&lt;/p>
+&lt;p>我觉得Powerbook G4的可维护性做的很好， 如果你想要清理灰尘或者添加记忆体的话，在键盘正面就能直接完成
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/keyboard.jpg"
+width="4096"
+height="2731"
+srcset="https://sharelter.github.io/p/powerbook-first-look/keyboard_hu_393f53f7efec4024.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/keyboard_hu_87e38bccf98d47a7.jpg 1024w"
+loading="lazy"
+alt="keyboard"
+class="gallery-image"
+data-flex-grow="149"
+data-flex-basis="359px"
+>
+只需要把键盘最上面的旋钮转180度，再扣住键盘两边的卡扣就可以把键盘拿下来。&lt;/p>
+&lt;p>值得一提的是键盘背面有磁铁用来让键盘平铺在金属框架上面的时候保持平整&lt;/p>
+&lt;p>拧下背面的所有六角螺丝就可以取下底壳
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/back.jpg"
+width="2436"
+height="1827"
+srcset="https://sharelter.github.io/p/powerbook-first-look/back_hu_88ffc23d770ac60c.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/back_hu_218896dc8cdb04fe.jpg 1024w"
+loading="lazy"
+alt="back"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+>
+那个时候的PCB还不是全黑(好像黑色会增加科技感？)&lt;br>
+散热风扇也不是现代笔记型计算机上常用的涡轮风扇,而使用了轴流风扇&lt;/p>
+&lt;p>这台PowerBook支援的作业系统版本是MacOS9.2到10.4,跨越了整个从ppc到x86的迁移过程&lt;/p>
+&lt;p>这次时间仓促，就先拿MacOS9.2.2试试水，等后面有时间折腾光盘了再回来玩。
+&lt;img src="https://sharelter.github.io/p/powerbook-first-look/macos9.jpg"
+width="2436"
+height="1124"
+srcset="https://sharelter.github.io/p/powerbook-first-look/macos9_hu_ac4bcf1975d1b832.jpg 480w, https://sharelter.github.io/p/powerbook-first-look/macos9_hu_4183b7117d4cf19d.jpg 1024w"
+loading="lazy"
+alt="macos9"
+class="gallery-image"
+data-flex-grow="216"
+data-flex-basis="520px"
+>&lt;/p></description></item></channel></rss>

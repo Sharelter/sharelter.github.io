@@ -1,0 +1,169 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="合理利用btrfs快照喵"><title>用Snapper自动管理btrfs快照</title><link rel=canonical href=https://sharelter.github.io/p/snapper/><link rel=stylesheet href=/scss/style.min.946cca6c6259ef94ac55abfae7c7bf3291ea3ed5eea17ef77500b257217c6710.css><meta property='og:title' content="用Snapper自动管理btrfs快照"><meta property='og:description' content="合理利用btrfs快照喵"><meta property='og:url' content='https://sharelter.github.io/p/snapper/'><meta property='og:site_name' content='Sharelter'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='toss'><meta property='article:published_time' content='2023-04-05T16:23:08+08:00'><meta property='article:modified_time' content='2023-04-05T16:23:08+08:00'><meta name=twitter:title content="用Snapper自动管理btrfs快照"><meta name=twitter:description content="合理利用btrfs快照喵"></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/sharelter-avatar_hu_d55e0afb08faa59.jpeg width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🍥</span></figure><div class=site-meta><h1 class=site-name><a href=/>Sharelter</a></h1><h2 class=site-description>喵～</h2></div></header><ol class=menu-social><li><a href=https://github.com/Sharelter target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/friend-links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Friend Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#btrfs子卷规划>Btrfs子卷规划</a></li><li><a href=#snapper>Snapper</a><ol><li><a href=#通过定时器来实现自动化操作>通过定时器来实现自动化操作</a></li></ol></li><li><a href=#snap-pac>snap-pac</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/linux/ style=background-color:orange;color:#fff>Linux</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/snapper/>用Snapper自动管理btrfs快照</a></h2><h3 class=article-subtitle>合理利用btrfs快照喵</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Apr 05, 2023</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>4 minute read</time></div></footer></div></header><section class=article-content><p>前天因为在疲惫的情况下操作很多东西， 一不小心把要dd进USB的ArchLinux LiveCD给dd到了系统盘里面。。。
+命令执行的时候速度达到了1.8GB/s， 我看了一眼dd的of参数，心中一阵凉意</p><blockquote><p>我的记忆就这样被清除了吗。。。。</p></blockquote><p>好在我还有备份， 不至于太糟， 只不过需要耗费时间来reinstall了</p><p>我尝试把作业系统完全还原到之前的状态，花费时间3hour</p><p>但是装回来之后， 我感到这个UI过于熟悉， 动起了翻新系统的念头</p><p>因为不久之前我在折腾飞腾的时候配置了Fedora， 配好之后还蛮好看的。。</p><p>真的心动了。。。</p><p>于是就真的开始动手了。。</p><p>把刚装好的Arch又完全抹掉，一手拿着<a class=link href=https://wiki.archlinux.org/title/Installation_guide target=_blank rel=noopener>Installation Guide</a> 操作Livecd, 从头开始安装了一遍Arch, 花费时间2hour</p><p>~~ 才不会因为忘记安装的时候忘记安装链接Internet的包而需要重新进入Livecd装包呢 ~~</p><p>~~ 才不会因为贪心有线网络的一点加速而耗费更多时间来让有线链接正常工作呢 ~~</p><p>这样操作一次真的耗时好多的。。。 不知道我在玩Rock5B的时候怎么会又耐心来来回回这样操作几十次的。。</p><p>在另一台设备上面打开<a class=link href=https://wiki.archlinux.org/title/General_recommendations target=_blank rel=noopener>General Recommendations</a>， 给黑漆漆的TTY注入灵魂</p><h2 id=btrfs子卷规划>Btrfs子卷规划</h2><p>要构建一个可以持久使用的作业系统的话， 需要有一个良好布局的文件系统来承载它</p><p>snapper推荐的文件系统布局如下</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-gdscript3 data-lang=gdscript3><span class=line><span class=cl><span class=n>subvolid</span><span class=o>=</span><span class=mi>5</span>
+</span></span><span class=line><span class=cl>  <span class=o>|</span>
+</span></span><span class=line><span class=cl>  <span class=err>├──</span> <span class=err>@</span> <span class=o>-|</span>
+</span></span><span class=line><span class=cl>  <span class=o>|</span>     <span class=n>contained</span> <span class=n>directories</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>  <span class=o>|</span>       <span class=err>├──</span> <span class=o>/</span><span class=n>usr</span>
+</span></span><span class=line><span class=cl>  <span class=o>|</span>       <span class=err>├──</span> <span class=o>/</span><span class=n>bin</span>
+</span></span><span class=line><span class=cl>  <span class=o>|</span>       <span class=err>├──</span> <span class=o>/.</span><span class=n>snapshots</span>
+</span></span><span class=line><span class=cl>  <span class=o>|</span>       <span class=err>├──</span> <span class=o>...</span>
+</span></span><span class=line><span class=cl>  <span class=o>|</span>
+</span></span><span class=line><span class=cl>  <span class=err>├──</span> <span class=err>@</span><span class=n>home</span>
+</span></span><span class=line><span class=cl>  <span class=err>├──</span> <span class=err>@</span><span class=n>snapshots</span>
+</span></span><span class=line><span class=cl>  <span class=err>├──</span> <span class=err>@</span><span class=n>var_log</span>
+</span></span></code></pre></td></tr></table></div></div><p><code>@</code>是根目录的子卷 <code>@home</code>是家目录的子卷， <code>@var_log</code>挂载在<code>/var/log</code></p><p><code>@snapshot</code>是专用于快照的子卷， 挂载在<code>/.snapshot</code></p><p>上面所有的子卷前面都有一个<code>@</code>符号表示这些子卷都直属于subvolid=5的顶层子卷</p><h2 id=snapper>Snapper</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl># pacman -S snapper 
+</span></span></code></pre></td></tr></table></div></div><p>snapper是一个辅助管理btrfs子卷的工具</p><p>可以自动化地定期对配置的子卷进行快照， 而且还可以清除过时的子卷</p><p>如果要把某个子卷交给<code>snapper</code>进行快照，可以像下面这样写：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl># snapper -c root create-config /
+</span></span><span class=line><span class=cl># snapper -c home create-config /home
+</span></span></code></pre></td></tr></table></div></div><p>子卷的路径写子卷的挂载点就好</p><p>我一开始操作的时候还以为要把子卷的顶层目录挂载上， 使用由顶层子卷索引的目录才可以让<code>snapper</code>进行快照操作</p><p>默认情况下， <code>snapper</code>将会在根目录子卷下面创建一个<code>/.snapshot</code>的子卷来存放所有快照</p><p>这个子卷的路径如下图所示</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>subvolid=5
+</span></span><span class=line><span class=cl>|
+</span></span><span class=line><span class=cl>|
+</span></span><span class=line><span class=cl> ---- @  # 挂载在/
+</span></span><span class=line><span class=cl>      |
+</span></span><span class=line><span class=cl>	  |
+</span></span><span class=line><span class=cl>	  .snapshots # 挂载在/.snapshots
+</span></span></code></pre></td></tr></table></div></div><p>这样存放快照有一个弊端， 如果后续需要回滚的话， 回滚之后会丢失掉所有的快照</p><p>要解决这个问题的话 可以为创建快照单独创建一个直属于顶层子卷的子卷<code>@snapshot</code></p><p>在一个正在运行的作业系统上面创建一个子卷的话， 可以先把顶层子卷找一个地方挂载上去再创建子卷</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl># mkdir /btrfs
+</span></span><span class=line><span class=cl># btrfs subvolume create /@snapshot
+</span></span><span class=line><span class=cl># mount -o subvol=@snapshot /dev/nvme1n1p2 /.snapshots
+</span></span></code></pre></td></tr></table></div></div><h3 id=通过定时器来实现自动化操作>通过定时器来实现自动化操作</h3><p>snapper可以通过<code>cron</code>或者<code>systemd timer</code>来定时触发快照
+但是如果同时启用了<code>cron</code>和<code>systemd timer</code>的定时服务， 那么会重复创建两次快照</p><p>我用了systemd timer来触发， 同时为了避免后面装了cron的实现之后出锅
+把snapper使用cron的定时文件删除掉</p><p>在<code>/etc/pacman.conf</code>里面添加一下内容：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>NoExtract = etc/cron.daily/snapper etc/cron.hourly/snapper
+</span></span></code></pre></td></tr></table></div></div><h2 id=snap-pac>snap-pac</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl># pacman -S snap-pac
+</span></span></code></pre></td></tr></table></div></div><p>snap-pac实现了通过<code>pacman</code>包管理器的hook函数来进行系统更新前后的自动化快照</p><p>它的配置文件在<code>/etc/snap-pac.ini</code>
+是一份注释良好的文件</p><p>里面所有的内容初始状态下都是被注释的 如果没有任何有效的配置内容， <code>snap-pac</code>将以默认配置运行</p><p>默认状况下 这个小工具将会对<code>snapper</code>的root配置进行snapshot</p><p>如果你的snapper里面有这个名为root的配置的话 不需要任何其他配置，<code>snap-pac</code>就可以正常工作了</p><p>配置文件里面详细写了每个参数的作用和它的默认值， 如果想要设定的值和默认值一样， 这项配置留空就可以</p><p>下面放一下我的<code>/etc/snap-pac.ini</code>文件</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl># snap-pac example configuration file
+</span></span><span class=line><span class=cl># see snap-pac(8) for more details
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl># Each section corresponds with a snapper configuration. Add additional sections to add
+</span></span><span class=line><span class=cl># other configurations to be snapshotted. By default, only the root configuration is snapshotted.
+</span></span><span class=line><span class=cl># Create a section named [DEFAULT] to have a setting apply for all snapper configurations
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## Uncomment to set parameters for snapper configuration named root
+</span></span><span class=line><span class=cl>[root]
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## How many characters to limit the description for snapper.
+</span></span><span class=line><span class=cl>## Default is 72
+</span></span><span class=line><span class=cl>desc_limit = 72
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## Whether or not to take snapshots of this snapper configuration
+</span></span><span class=line><span class=cl>## Default is True for root configuration and False for all other configurations
+</span></span><span class=line><span class=cl>snapshot = True
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## What snapper cleanup algorithm to use
+</span></span><span class=line><span class=cl>## Default is number
+</span></span><span class=line><span class=cl>cleanup_algorithm = number
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## Pre snapshot description.
+</span></span><span class=line><span class=cl>## Default is the pacman command that triggered the hook
+</span></span><span class=line><span class=cl>#pre_description = pacman pre snapshot
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## Post snapshot description.
+</span></span><span class=line><span class=cl>## Default is the list of packages involved in the pacman transaction
+</span></span><span class=line><span class=cl>#post_description = pacman post snapshot
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## Uncomment to add &#34;important=yes&#34; to userdata for snapshots referring to these packages
+</span></span><span class=line><span class=cl>## Default is []
+</span></span><span class=line><span class=cl>important_packages = [&#34;linux&#34;]
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## Uncomment to add &#34;important=yes&#34; to userdata for snapshots that were created with the following commands
+</span></span><span class=line><span class=cl>## Default is []
+</span></span><span class=line><span class=cl>important_commands = [&#34;pacman -Syu&#34;]
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## Add custom userdata. Each key-value pair should be an item in the list
+</span></span><span class=line><span class=cl>## Default is []
+</span></span><span class=line><span class=cl>#userdata = [&#34;key=value&#34;,&#34;foo=bar&#34;]
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>## Example for another snapper configuration named &#34;home&#34;
+</span></span><span class=line><span class=cl># [home]
+</span></span><span class=line><span class=cl>## Default is False
+</span></span><span class=line><span class=cl># snapshot = True
+</span></span></code></pre></td></tr></table></div></div><p>配置好之后， 每次使用<code>pacman</code>进行包的操作， snapper都会对设定的子卷进行快照</p></section><footer class=article-footer><section class=article-tags><a href=/tags/toss/>Toss</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/qemu-hostfwd-config/><div class=article-details><h2 class=article-title>用Virt-Mnanger来配置qemu hostfwd端口转发</h2></div></a></article><article class=has-image><a href=/p/archlinux-btrfs/><div class=article-image><img src=/p/archlinux-btrfs/btrfs-logo.ced3e33504a1f538359c14bd01650249_hu_738a0fd52e7dc25e.jpg width=250 height=150 loading=lazy alt="Featured image of post 让ArchLinux运行在Btrfs上！" data-key=archlinux-btrfs data-hash="md5-ztPjNQSh9Tg1nBS9AWUCSQ=="></div><div class=article-details><h2 class=article-title>让ArchLinux运行在Btrfs上！</h2></div></a></article></div></div></aside><div id=gitalk-container></div><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css><script src=https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js></script><script src=https://cdn.jsdelivr.net/npm/blueimp-md5@2.18.0/js/md5.min.js></script><script>const gitalk=new Gitalk({clientID:"e61b02a69a03b3124057",clientSecret:"4880b2ae64284f63f338dd2ee61ad9b5af77d47d",repo:"sharelter.github.io",owner:"Sharelter",admin:["Sharelter"],distractionFreeMode:!1,id:md5(location.pathname),proxy:null});(function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("gitalk-container").innerHTML="Gitalk comments not available by default when the website is previewed locally.";return}gitalk.render("gitalk-container")})()</script><footer class=site-footer><section class=copyright>&copy;
+2022 -
+2025 Sharelter</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>
